@@ -168,6 +168,33 @@ def parse_deps(toml_path):
     return deps
 
 
+def create_pth_file():
+    header("Configuring PYTHONPATH")
+
+    project_root = Path(__file__).parent.resolve()
+
+    # Find site-packages inside the venv
+    if IS_WINDOWS:
+        site_packages = Path(".venv") / "Lib" / "site-packages"
+    else:
+        matches = list(Path(".venv/lib").glob("python3*/site-packages"))
+        if not matches:
+            error("Could not find site-packages inside .venv — was the venv created?")
+            sys.exit(1)
+        site_packages = matches[0]
+
+    pth_file = site_packages / "lakehouse.pth"
+
+    if pth_file.exists():
+        warn("lakehouse.pth already exists — skipping.")
+        return
+
+    pth_file.write_text(str(project_root) + "\n")
+    success(f"Created: {pth_file}")
+    info(f"Project root added to PYTHONPATH: {project_root}")
+    info("All local modules (config, ingestion, flows, etc.) will now resolve automatically.")
+
+
 # Activation hint
 def print_activation_hint():
     header("Setup complete!")
@@ -194,6 +221,7 @@ def main():
 
     create_venv()
     install_deps()
+    create_pth_file()
     print_activation_hint()
 
 

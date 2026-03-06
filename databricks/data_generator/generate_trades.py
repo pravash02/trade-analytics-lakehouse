@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from faker import Faker
 from config.settings import INSTRUMENTS, DESKS, REGIONS
 
+
 fake = Faker()
 random.seed(42)  # Reproducible
 
