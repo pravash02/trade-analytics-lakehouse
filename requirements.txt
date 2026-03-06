@@ -1,0 +1,4 @@
+beartype==0.22.9
+Faker==40.1.0
+setuptools==80.9.0
+tzdata==2025.3

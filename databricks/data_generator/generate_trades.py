@@ -1,0 +1,58 @@
+import json
+import random
+import uuid
+from datetime import datetime, timedelta
+from faker import Faker
+from config.settings import INSTRUMENTS, DESKS, REGIONS
+
+fake = Faker()
+random.seed(42)  # Reproducible
+
+COUNTERPARTIES = [fake.company() for _ in range(25)]
+TRADERS = [f"TDR_{str(i).zfill(3)}" for i in range(1, 51)]  # 50 traders
+
+def generate_trade(timestamp: datetime) -> dict:
+    instrument = random.choice(INSTRUMENTS)
+    desk = "FX" if instrument in ["EURUSD","GBPUSD","USDJPY","USDCHF"] \
+           else "Equities" if instrument in ["AAPL","MSFT","BMW.DE","SAP.DE"] \
+           else "Commodities"
+
+    # Log-normal notional: realistic distribution (most small, few huge)
+    notional = round(random.lognormvariate(mu=11, sigma=2), 2)
+    notional = max(10_000, min(notional, 50_000_000))  # Clamp
+
+    # Inject 2% anomalies for downstream detection
+    is_anomaly = random.random() < 0.02
+    if is_anomaly:
+        notional = notional * random.uniform(50, 200)  # Suspiciously large
+
+    return {
+        "trade_id":       str(uuid.uuid4()),
+        "trader_id":      random.choice(TRADERS),
+        "instrument":     instrument,
+        "direction":      random.choice(["BUY", "SELL"]),
+        "notional":       notional,
+        "price":          round(random.uniform(1.0, 500.0), 4),
+        "desk":           desk,
+        "region":         random.choice(REGIONS),
+        "counterparty":   random.choice(COUNTERPARTIES),
+        "status":         random.choices(
+                              ["EXECUTED", "CANCELLED", "PENDING"],
+                              weights=[95, 3, 2])[0],
+        "trade_timestamp": timestamp.isoformat(),
+        "is_anomaly":     is_anomaly,   # Ground truth label for Gold layer
+    }
+
+def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
+    # Generate across 30 days so time-series
+    start = datetime.now() - timedelta(days=30)
+    with open(output_path, "w") as f:
+        for i in range(n):
+            ts = start + timedelta(seconds=i * 52)
+            trade = generate_trade(ts)
+            f.write(json.dumps(trade) + "\n")
+    print(f"Generated {n} trades → {output_path}")
+
+
+if __name__ == "__main__":
+    generate_dataset()

@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trade-analytics-lakehouse"
+version = "0.1.0"
+description = "Databricks Lakehouse project with Delta Tables, PySpark, and Prefect"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = { text = "" }
+
+dependencies = [
+    # Core Lakehouse / Spark
+    "pyspark>=3.5.0",
+    "delta-spark>=3.2.0",
+
+    # Databricks
+    "databricks-sdk>=0.28.0",
+    "databricks-connect>=15.1.0",
+
+    # Orchestration
+    "prefect>=3.0.0",
+    "prefect-databricks>=0.4.0",
+
+    # Data / Validation
+    "pydantic>=2.0.0",
+    "pyarrow>=15.0.0",
+    "pandas>=2.2.0",
+
+    # Utilities
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.0",
+    "faker>=25.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.14.0",
+    "chispa>=0.9.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+strict = false
