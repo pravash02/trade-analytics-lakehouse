@@ -12,8 +12,8 @@ license = { text = "" }
 
 dependencies = [
     # Core Lakehouse / Spark
-    "pyspark>=3.5.0",
-    "delta-spark>=3.2.0",
+    "pyspark==3.5.3",
+    "delta-spark==3.2.1",
 
     # Databricks
     "databricks-sdk>=0.28.0",

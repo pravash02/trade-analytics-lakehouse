@@ -1,6 +1,23 @@
 import os
 from pyspark.sql import SparkSession
 
+JAVA_17_OPTIONS = " ".join([
+    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+    "--add-opens=java.base/java.io=ALL-UNNAMED",
+    "--add-opens=java.base/java.net=ALL-UNNAMED",
+    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+    "--add-opens=java.base/java.util=ALL-UNNAMED",
+    "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+    "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+    "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+    "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+    "-Dio.netty.tryReflectionSetAccessible=true",
+])
+
 
 def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
     """
@@ -21,6 +38,8 @@ def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
                 SparkSession.builder
                 .appName(app_name)
                 .master("local[*]")
+                .config("spark.driver.extraJavaOptions",  JAVA_17_OPTIONS)
+                .config("spark.executor.extraJavaOptions", JAVA_17_OPTIONS)
                 .config("spark.sql.extensions",
                         "io.delta.sql.DeltaSparkSessionExtension")
                 .config("spark.sql.catalog.spark_catalog",
