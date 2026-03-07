@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import random
 import uuid
 from datetime import datetime, timedelta
@@ -45,6 +46,9 @@ def generate_trade(timestamp: datetime) -> dict:
     }
 
 def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    
     # Generate across 30 days so time-series
     start = datetime.now() - timedelta(days=30)
     with open(output_path, "w") as f:
