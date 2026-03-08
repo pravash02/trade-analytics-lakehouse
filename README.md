@@ -1,6 +1,17 @@
 # trade-analytics-lakehouse
 End-to-end Lakehouse pipeline ingesting 50K+ financial trade events via Kafka simulation, transforming through Medallion architecture on Databricks + Delta Lake with dbt-databricks, orchestrated by Airflow, with live analytics dashboard.
 
+
+# macOS / Linux
+chmod +x setup.sh && ./setup.sh
+
+# Windows (PowerShell as Administrator)
+.\setup.ps1
+
+# Already have Python 3.8+?
+python local_setup.py
+
+
 ## JAVA Set up
 Java version - 17
 

@@ -29,7 +29,8 @@ def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
     is_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
 
     if is_databricks:
-        spark = SparkSession.builder.getOrCreate()
+        from databricks.connect import DatabricksSession
+        spark = DatabricksSession.builder.getOrCreate()
 
     else:
         try:
@@ -59,7 +60,7 @@ def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
 
 
 def _log_session_info(spark: SparkSession, is_databricks: bool) -> None:
-    env  = "Databricks" if is_databricks else "Local"
+    env = os.getenv("SPARK_ENV", "local")
     print(f"[SparkSession] Environment : {env}")
     print(f"[SparkSession] App name    : {spark.conf.get('spark.app.name')}")
     print(f"[SparkSession] Spark ver   : {spark.version}")
