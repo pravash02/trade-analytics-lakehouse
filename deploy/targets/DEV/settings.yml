@@ -1,0 +1,19 @@
+targets:
+  TARGET:
+    workspcace:
+      host: "dbc-632d0cf9-7001.cloud.databricks.com"
+      root_path: "/Workspace/Shared/${bundle.name}/${bundle.version}/"
+
+    variables:
+      namespace: "AT*****"
+      vault_url: "https://eva.vault.azure.net"
+      secret_path: "deploy/aad/SVC_AT*****_deploy"
+      cert_role: "cert_***"
+      cert_path: "/path/to/cert.cer"
+      cert_key_path: "/path/to/cert.key"
+      cluster_id: "1234-567890-abcde"
+      warehouse_id: "fc7181f319f9ab14"
+      auth_strategy: pat
+      pat_token: "dapi5e0fb47d29dc387466c6c900ba5ccde8"
+      http_path: "/sql/1.0/warehouses/fc7181f319f9ab14"
+      org_id: "1757795806542983"

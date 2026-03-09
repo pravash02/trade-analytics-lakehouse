@@ -1,5 +1,14 @@
 import pathlib, os, yaml, logging, requests, json
+import token
 import urllib.parse as urljoin
+
+
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    level=logging.INFO
+)
+log = logging.getLogger(__name__)
+_ROOT = pathlib.Path(__file__).parent.resolve()
 
 
 def get_config(path: str) -> dict:
@@ -15,10 +24,11 @@ def get_host(env: str) -> str:
     """
     Determines the Databricks host to connect to based on the environment.
     """
-    path = pathlib.Path(__file__).parent.resolve()
-    config = get_config(f"{path}/deploy/target_envs/{env}/settings.yaml")
+    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
     host = config["targets"][env]["workspace"]["host"]
+
     print(f"Determined host for environment '{env}': {host}")
+    return host
 
 
 def get_spn_creds(vault_url: str, namespace: str, secret_path: str, cert_role: str, cert_path: str, cert_key_path: str) -> dict:
@@ -120,7 +130,48 @@ def get_token(env: str) -> str:
     """
     Determines the Databricks token to connect to based on the environment.
     """
-    path = pathlib.Path(__file__).parent.resolve()
-    config = get_config(f"{path}/deploy/target_envs/{env}/settings.yaml")
+    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
     variables = config["targets"][env]["variables"]
-    print(get_databricks_access_token(variables))
+
+    strategy  = variables.get("auth_strategy", "pat").lower()
+    if strategy == "pat":
+        token = _get_pat(env, variables)
+    else:
+        raise ValueError(
+            f"[{env}] Unknown auth_strategy '{strategy}' in settings.yaml.\n"
+            f"Valid values: 'pat'  |  'spn' (uncomment spn block in config.py first)"
+        )
+
+    print(token)
+    return token
+
+
+def get_http_path(env: str) -> str:
+    """
+    Returns the SQL Warehouse HTTP path for the given environment.
+    """
+    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
+    variables = config["targets"][env]["variables"]
+    http_path = str(variables.get("http_path", "")).strip()
+
+    log.info(f"[{env}] HTTP Path: {http_path}")
+    return http_path
+
+
+def _get_pat(env: str, variables: dict) -> str:
+    """
+    Returns a Personal Access Token.
+    """
+    token = os.environ.get("DATABRICKS_TOKEN", "").strip()
+    if token:
+        log.info(f"[{env}] PAT from DATABRICKS_TOKEN env var")
+        return token
+
+    token = str(variables.get("pat_token", "")).strip()
+    if token:
+        log.info(f"[{env}] PAT from settings.yaml")
+        return token
+
+    raise EnvironmentError(
+        f"\n[{env}] No PAT token found. Do one of:\n"
+    )

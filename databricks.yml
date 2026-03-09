@@ -1,0 +1,39 @@
+bundle:
+  name: trade-analytics-lakehouse
+  version: 0.1.0
+  terraform:
+    exec_path: "deploy/terraform/1.8.1/terraform"
+
+include:
+  - deploy/targets/TARGET/settings.yml
+  - deploy/resources/*.yml
+
+sync:
+  include:
+    - pipeline/
+    - deploy/
+  exclude:
+   - .*/
+   - deploy/main_deploy/
+   - deploy/targets/
+   - tests/
+   -  databricks.yml
+   - __pycache__/
+
+variables:
+   namespace:
+    vault_url:
+    secret_path:
+    cert_role:
+    cert_path:
+    cert_key_path:
+    cluster_id:
+    warehouse_id:
+
+targets:
+  developer:
+    mode: development
+    default: true
+  
+    workspace:
+        host: 
