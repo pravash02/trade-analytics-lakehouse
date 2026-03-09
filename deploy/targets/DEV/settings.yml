@@ -7,8 +7,8 @@ targets:
     variables:
       namespace: "AT*****"
       vault_url: "https://eva.vault.azure.net"
-      secret_path: "deploy/aad/SVC_AT*****_deploy"
-      cert_role: "cert_***"
+      secret_path: ""
+      cert_role: ""
       cert_path: "/path/to/cert.cer"
       cert_key_path: "/path/to/cert.key"
       cluster_id: "1234-567890-abcde"
