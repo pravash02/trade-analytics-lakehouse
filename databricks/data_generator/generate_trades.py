@@ -21,19 +21,19 @@ def generate_trade(timestamp: datetime) -> dict:
 
     # Log-normal notional: realistic distribution (most small, few huge)
     notional = round(random.lognormvariate(mu=11, sigma=2), 2)
-    notional = max(10_000, min(notional, 50_000_000))  # Clamp
+    notional = max(10_000.00, min(notional, 50_000_000.00))  # Clamp
 
     # Inject 2% anomalies for downstream detection
     is_anomaly = random.random() < 0.02
     if is_anomaly:
-        notional = notional * random.uniform(50, 200)  # Suspiciously large
+        notional = round(notional * random.uniform(50, 200), 2)
 
     return {
         "trade_id":       str(uuid.uuid4()),
         "trader_id":      random.choice(TRADERS),
         "instrument":     instrument,
         "direction":      random.choice(["BUY", "SELL"]),
-        "notional":       notional,
+        "notional":       float(notional),
         "price":          round(random.uniform(1.0, 500.0), 4),
         "desk":           desk,
         "region":         random.choice(REGIONS),

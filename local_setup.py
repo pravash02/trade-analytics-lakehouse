@@ -5,8 +5,8 @@ Trade Analytics Lakehouse — Setup entry point.
 This script is a convenience wrapper for users who already have Python.
 It delegates to the proper bootstrap script for your OS:
 
-  macOS/Linux  →  setup.sh   (handles uv + Python 3.10 install automatically)
-  Windows      →  setup.ps1  (handles uv + Python 3.10 install automatically)
+  macOS/Linux  →  setup.sh   (handles uv + Python 3.12 install automatically)
+  Windows      →  setup.ps1  (handles uv + Python 3.12 install automatically)
 
 If you don't have Python yet, run the bootstrap script directly:
 
@@ -57,7 +57,7 @@ def main():
     if (major, minor) >= (3, 12):
         warn(f"Python {major}.{minor} cannot be used for the venv.")
         warn("PySpark 3.5.x requires Python <=3.11 inside the venv.")
-        warn("The bootstrap script will install Python 3.10 automatically.")
+        warn("The bootstrap script will install Python 3.12 automatically.")
         warn("Delegating to bootstrap now...\n")
 
     # ── Delegate to the real bootstrap script ────────────────────────────────

@@ -8,9 +8,11 @@ chmod +x setup.sh && ./setup.sh
 # Windows (PowerShell as Administrator)
 .\setup.ps1
 
-# Already have Python 3.8+?
+# Already have Python 3.12+?
 python local_setup.py
 
+
+# Below setup is for MAC
 
 ## JAVA Set up
 Java version - 17
@@ -21,3 +23,22 @@ Java version - 17
     - export JAVA_HOME=\$(/usr/libexec/java_home)
     - echo $JAVA_HOME
 4. Check all java verions installed: /usr/libexec/java_home -V
+
+
+## Spark
+version - 3.5.3
+
+
+## Set up in Local
+Install Pytohn: `brew install python@3.12`
+
+Add the path to ~/.zshrc: `echo 'export PATH="/path/to/python/bin:$PATH"' >> ~/.zshrc`
+Apply Changes: `source ~/.zshrc`
+
+Go into Project Folder: `cd trade_analytics-lakehouse`
+
+Create Environment: `python3.12 -m venv .venv`
+
+Activate Environment: `source .venv/bin/activate`
+
+Install dependencies: `pip install -e ".[dev]"`

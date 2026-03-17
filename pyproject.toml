@@ -17,7 +17,6 @@ dependencies = [
 
     # Databricks
     "databricks-sdk>=0.28.0",
-    "databricks-connect>=15.1.0",
 
     # Orchestration
     "prefect>=3.0.0",
@@ -44,6 +43,9 @@ dev = [
     "ruff>=0.4.0",
     "mypy>=1.10.0",
     "pre-commit>=3.7.0",
+]
+databricks = [
+    "databricks-connect>=15.1.0",   # Only install when connecting to Databricks
 ]
 
 [tool.hatch.build.targets.wheel]

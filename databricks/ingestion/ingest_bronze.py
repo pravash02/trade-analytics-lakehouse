@@ -7,7 +7,7 @@ from databricks.ingestion.schema import TradeEvent
 from config.settings import BRONZE_PATH, QUARANTINE_PATH
 from config.spark_session import get_spark
 
-spark = get_spark("TradeAnalytics-Bronze")
+spark = get_spark("TradeAnalyticsLakehouse")
 
 
 def ingest_bronze(input_path: str = "./data/trades.jsonl"):

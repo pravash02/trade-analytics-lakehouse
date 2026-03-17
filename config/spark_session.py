@@ -22,16 +22,19 @@ JAVA_17_OPTIONS = " ".join([
 def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
     """
     Returns a SparkSession singleton.
-    - Inside Databricks: Reuse the existing spark session
-    - Local dev: Creates a new spark session with Delta Lake support
+    - SPARK_ENV=local  → Force local mode (ignores Databricks runtime)
+    - Inside Databricks → Reuse the existing Databricks session
+    - Local dev default → Creates a new spark session with Delta Lake support
     """
-
-    is_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
-
+    spark_env = os.getenv("SPARK_ENV", "local")          # Default to local
+    is_databricks = (
+        spark_env != "local"                              # Respect forced local
+        and "DATABRICKS_RUNTIME_VERSION" in os.environ   # Or actual Databricks
+    )
+    
     if is_databricks:
         from databricks.connect import DatabricksSession
         spark = DatabricksSession.builder.getOrCreate()
-
     else:
         try:
             from delta import configure_spark_with_delta_pip

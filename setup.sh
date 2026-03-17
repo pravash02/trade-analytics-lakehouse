@@ -8,8 +8,8 @@
 #
 # What this does:
 #   1. Installs uv (the only tool installed system-wide, via curl)
-#   2. Uses uv to download + manage Python 3.10 (no system Python needed)
-#   3. Creates .venv pinned to Python 3.10
+#   2. Uses uv to download + manage Python 3.12 (no system Python needed)
+#   3. Creates .venv pinned to Python 3.12
 #   4. Installs all project packages inside .venv
 #   5. Configures PYTHONPATH via .pth file
 #   6. Checks Java + JAVA_TOOL_OPTIONS for PySpark/Java 17 compatibility
@@ -29,7 +29,7 @@ error()   { echo -e "${RED}[ERROR]${RESET} $*"; }
 header()  { echo -e "\n${BOLD}${BLUE}$(printf '─%.0s' {1..55})\n$*\n$(printf '─%.0s' {1..55})${RESET}"; }
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-PYTHON_VERSION="3.10"
+PYTHON_VERSION="3.12"
 PROJECT_NAME="trade-analytics-lakehouse"
 
 # ─── OS Detection ─────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ else
 fi
 
 
-# ─── Step 2: Check / Install Python 3.10 via uv ──────────────────────────────
+# ─── Step 2: Check / Install Python 3.12 via uv ──────────────────────────────
 header "Step 2/7 — Ensuring Python ${PYTHON_VERSION}"
 
 # uv can download and manage its own Python runtimes — no system Python needed
@@ -271,7 +271,7 @@ header "Setup complete!"
 echo -e "${BOLD}Activate your environment:${RESET}\n"
 echo -e "  ${GREEN}source .venv/bin/activate${RESET}\n"
 echo "Then verify:"
-echo -e "  ${GREEN}python --version${RESET}           # 3.10.x"
+echo -e "  ${GREEN}python --version${RESET}           # 3.12.x"
 echo -e "  ${GREEN}pip list | grep pyspark${RESET}    # 3.5.3"
 echo -e "  ${GREEN}pip list | grep delta${RESET}      # 3.2.1"
 echo -e "  ${GREEN}pytest tests/${RESET}              # run test suite"
