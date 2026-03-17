@@ -18,7 +18,7 @@ def ingest_bronze(input_path: str = "./data/trades.jsonl"):
         for line in f:
             raw = json.loads(line)
             try:
-                TradeEvent(**raw)           # Validate
+                TradeEvent(**raw)
                 valid_records.append(raw)
             except ValidationError as e:
                 raw["_error"] = str(e)
@@ -26,7 +26,6 @@ def ingest_bronze(input_path: str = "./data/trades.jsonl"):
 
     print(f"Valid: {len(valid_records)} | Quarantined: {len(invalid_records)}")
 
-    # Write valid records -> Bronze Delta (append-only + audit columns)
     if valid_records:
         df_valid = spark.createDataFrame(valid_records)
         df_valid = df_valid \
@@ -37,7 +36,6 @@ def ingest_bronze(input_path: str = "./data/trades.jsonl"):
             .mode("append") \
             .save(BRONZE_PATH)
 
-    # Write invalid records → Quarantine Delta
     if invalid_records:
         df_invalid = spark.createDataFrame(invalid_records)
         df_invalid = df_invalid \

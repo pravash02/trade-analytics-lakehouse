@@ -8,10 +8,10 @@ from config.settings import INSTRUMENTS, DESKS, REGIONS
 
 
 fake = Faker()
-random.seed(42)  # Reproducible
+random.seed(42)
 
 COUNTERPARTIES = [fake.company() for _ in range(25)]
-TRADERS = [f"TDR_{str(i).zfill(3)}" for i in range(1, 51)]  # 50 traders
+TRADERS = [f"TDR_{str(i).zfill(3)}" for i in range(1, 51)]
 
 def generate_trade(timestamp: datetime) -> dict:
     instrument = random.choice(INSTRUMENTS)
@@ -19,11 +19,9 @@ def generate_trade(timestamp: datetime) -> dict:
            else "Equities" if instrument in ["AAPL","MSFT","BMW.DE","SAP.DE"] \
            else "Commodities"
 
-    # Log-normal notional: realistic distribution (most small, few huge)
     notional = round(random.lognormvariate(mu=11, sigma=2), 2)
-    notional = max(10_000.00, min(notional, 50_000_000.00))  # Clamp
+    notional = max(10_000.00, min(notional, 50_000_000.00))
 
-    # Inject 2% anomalies for downstream detection
     is_anomaly = random.random() < 0.02
     if is_anomaly:
         notional = round(notional * random.uniform(50, 200), 2)
@@ -42,14 +40,13 @@ def generate_trade(timestamp: datetime) -> dict:
                               ["EXECUTED", "CANCELLED", "PENDING"],
                               weights=[95, 3, 2])[0],
         "trade_timestamp": timestamp.isoformat(),
-        "is_anomaly":     is_anomaly,   # Ground truth label for Gold layer
+        "is_anomaly":     is_anomaly,
     }
 
 def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     
-    # Generate across 30 days so time-series
     start = datetime.now() - timedelta(days=30)
     with open(output_path, "w") as f:
         for i in range(n):
