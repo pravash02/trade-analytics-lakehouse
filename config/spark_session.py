@@ -28,7 +28,7 @@ def get_spark(app_name: str = "TradeAnalyticsLakehouse") -> SparkSession:
     """
     spark_env = os.getenv("SPARK_ENV", "local")          # Default to local
     is_databricks = (
-        spark_env != "local"                              # Respect forced local
+        spark_env != "local"
         and "DATABRICKS_RUNTIME_VERSION" in os.environ   # Or actual Databricks
     )
     

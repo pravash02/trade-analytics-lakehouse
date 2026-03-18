@@ -43,7 +43,7 @@ def generate_trade(timestamp: datetime) -> dict:
         "is_anomaly":     is_anomaly,
     }
 
-def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
+def generate_dataset(n: int = 50_000, output_path: str = "./local_data/trades.jsonl"):
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     
@@ -53,7 +53,7 @@ def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
             ts = start + timedelta(seconds=i * 52)
             trade = generate_trade(ts)
             f.write(json.dumps(trade) + "\n")
-    print(f"Generated {n} trades → {output_path}")
+    print(f"Generated {n} trades -> {output_path}")
 
 
 if __name__ == "__main__":

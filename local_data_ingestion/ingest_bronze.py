@@ -3,14 +3,14 @@ from pyspark.sql.functions import current_timestamp, lit
 from delta import configure_spark_with_delta_pip
 from pydantic import ValidationError
 import json
-from databricks.ingestion.schema import TradeEvent
+from local_data_ingestion.schema import TradeEvent
 from config.settings import BRONZE_PATH, QUARANTINE_PATH
 from config.spark_session import get_spark
 
 spark = get_spark("TradeAnalyticsLakehouse")
 
 
-def ingest_bronze(input_path: str = "./data/trades.jsonl"):
+def ingest_bronze(input_path: str = "./local_data/trades.jsonl"):
     valid_records   = []
     invalid_records = []
 

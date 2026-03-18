@@ -30,6 +30,9 @@ version - 3.5.3
 
 
 ## Set up in Local
+vi ~/.zshrc      
+vi ~/.bash_profile
+
 Install Pytohn: `brew install python@3.12`
 
 Add the path to ~/.zshrc: `echo 'export PATH="/path/to/python/bin:$PATH"' >> ~/.zshrc`
