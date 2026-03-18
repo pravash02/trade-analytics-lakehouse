@@ -1,4 +1,4 @@
-from config.enums import ADLS, SPARK_ENV, SparkEnv, StorageLayer
+from config.enums import ADLS, SPARK_ENV, SparkEnv, StorageLayer, StorageType
 
 
 def abfss(layer: StorageLayer, subpath: str) -> str:

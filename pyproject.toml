@@ -17,6 +17,7 @@ dependencies = [
 
     # Databricks
     "databricks-sdk>=0.28.0",
+    "databricks-cli==0.18.0",
 
     # Orchestration
     "prefect>=3.0.0",

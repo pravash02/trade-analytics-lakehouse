@@ -3,11 +3,18 @@ from config.enums import SPARK_ENV, SparkEnv, StorageLayer
 
 
 if SPARK_ENV == SparkEnv.DATABRICKS:
-    from config.utils import abfss
-    BRONZE_PATH     = abfss(StorageLayer.BRONZE,     "trade-analytics/bronze/raw_trades")
-    SILVER_PATH     = abfss(StorageLayer.SILVER,     "trade-analytics/silver/trades_enriched")
-    GOLD_PATH       = abfss(StorageLayer.GOLD,       "trade-analytics/gold")
-    QUARANTINE_PATH = abfss(StorageLayer.QUARANTINE, "trade-analytics/bronze/quarantine")
+    # abfss location
+    # from config.utils import abfss
+    # BRONZE_PATH     = abfss(StorageLayer.BRONZE,     "trade-analytics/bronze/raw_trades")
+    # SILVER_PATH     = abfss(StorageLayer.SILVER,     "trade-analytics/silver/trades_enriched")
+    # GOLD_PATH       = abfss(StorageLayer.GOLD,       "trade-analytics/gold")
+    # QUARANTINE_PATH = abfss(StorageLayer.QUARANTINE, "trade-analytics/bronze/quarantine")
+
+    # dbfs location
+    BRONZE_PATH     = "/Volumes/workspace/default/trade-analytics/bronze/raw_trades"
+    SILVER_PATH     = "/Volumes/workspace/default/trade-analytics/silver/trades_enriched"
+    GOLD_PATH       = "/Volumes/workspace/default/trade-analytics/gold"
+    QUARANTINE_PATH = "/Volumes/workspace/default/trade-analytics/bronze/quarantine"
 else:
     _BASE           = "./delta"
     BRONZE_PATH     = f"{_BASE}/bronze/raw_trades"

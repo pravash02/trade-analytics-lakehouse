@@ -18,6 +18,13 @@ class StorageLayer(str, Enum):
     QUARANTINE = "quarantine"
 
 
+class StorageType(str, Enum):
+    DBFS    = "dbfs"
+    VOLUME  = "volume"
+    LOCAL   = "local"
+    ABFSS   = "abfss"
+
+
 @dataclass(frozen=True)
 class AdlsLayerConfig:
     account:   str
