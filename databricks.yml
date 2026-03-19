@@ -112,3 +112,4 @@ targets:
     default: true
     workspace:
       host: ${var.workspace_host}
+      root_path: "/Workspace/Shared/${bundle.name}"

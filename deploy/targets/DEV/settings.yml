@@ -2,6 +2,7 @@ targets:
   TARGET:
     workspace:
       host: "https://dbc-108aefc7-f8df.cloud.databricks.com"
+      root_path: "/Workspace/Shared/${bundle.name}"
 
     variables:
       auth_strategy: "pat"
