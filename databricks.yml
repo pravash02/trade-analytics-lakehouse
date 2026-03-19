@@ -30,6 +30,10 @@ variables:
     description: "Databricks workspace org ID (used for direct links)"
     default: ""
 
+  pat_token:
+    description: "Personal Access Token (DEV only — injected from DATABRICKS_TOKEN env var in CI)"
+    default: ""
+
   workspace_host:
     description: "Databricks workspace URL (https://...)"
     default: ""
