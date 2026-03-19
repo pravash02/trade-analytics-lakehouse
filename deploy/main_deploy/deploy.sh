@@ -60,7 +60,7 @@ patch_terraform_path() {
 
 
 copy_config() {
-    cp "${SCRIPT_DIR}/config.py" "${PROJECT_ROOT}/config.py"
+    # cp "${SCRIPT_DIR}/config.py" "${PROJECT_ROOT}/config.py"
     echo "[INFO] config.py copied to project root"
 }
 
@@ -76,13 +76,19 @@ resolve_auth() {
     cd "${PROJECT_ROOT}"
     echo "[INFO] Resolving Databricks host..."
     export DATABRICKS_HOST
-    DATABRICKS_HOST=$(python3 -c "import config; print(config.get_host('TARGET'))")
-    echo "[INFO] DATABRICKS_HOST = $DATABRICKS_HOST"
-
-    echo "[INFO] Resolving Databricks token..."
+    DATABRICKS_HOST=$(python3 -c "
+        import sys
+        sys.path.insert(0, '${SCRIPT_DIR}')
+        import config
+        print(config.get_host('TARGET'))
+        ")
     export DATABRICKS_TOKEN
-    DATABRICKS_TOKEN=$(python3 -c "import config; print(config.get_token('TARGET'))")
-    echo "[INFO] DATABRICKS_TOKEN = *** (set)"
+    DATABRICKS_TOKEN=$(python3 -c "
+        import sys
+        sys.path.insert(0, '${SCRIPT_DIR}')
+        import config
+        print(config.get_token('TARGET'))
+        ")
 }
 
 
