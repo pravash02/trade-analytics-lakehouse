@@ -46,6 +46,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r deploy/main_deploy/requirements.txt
 
+      - name: Install Databricks CLI
+        uses: databricks/setup-databricks@v3
+
       - name: Deploy to DEV
         env:
           ENV:                 "DEV"
@@ -69,7 +72,7 @@ jobs:
           shutil.copy('deploy/targets/DEV/settings.yml', 'deploy/targets/TARGET/settings.yml')
           print(config.get_host('TARGET'))
           ")
-          ./databricks jobs list --output JSON | python3 -c "
+          databricks jobs list --output JSON | python3 -c "
           import json, sys
           jobs = json.load(sys.stdin).get('jobs', [])
           found = [j for j in jobs if 'trade-analytics' in j.get('settings', {}).get('name', '')]

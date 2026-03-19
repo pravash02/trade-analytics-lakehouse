@@ -119,7 +119,7 @@ print(s['targets']['TARGET']['variables'].get('wheel_path', ''))
     fi
 
     # Upload wheel file
-    ./databricks fs cp "${WHEEL_FILE}" "${WHEEL_VOLUME_PATH}" --overwrite
+    databricks fs cp "${WHEEL_FILE}" "${WHEEL_VOLUME_PATH}" --overwrite
     echo "[INFO] Wheel uploaded -> $WHEEL_VOLUME_PATH"
 }
 
@@ -128,7 +128,7 @@ deploy_bundle() {
     echo "[INFO] Deploying Databricks Asset Bundle..."
     cd "${PROJECT_ROOT}"
 
-    ./databricks bundle deploy -t TARGET
+    databricks bundle deploy -t TARGET
 
     echo ""
     echo "======================================================"
@@ -148,7 +148,7 @@ main() {
     echo "======================================================"
     echo ""
 
-    init
+    # init
     copy_env_settings
     patch_terraform_path
     copy_config
