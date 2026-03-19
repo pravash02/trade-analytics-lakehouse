@@ -47,7 +47,7 @@ jobs:
           pip install -r deploy/main_deploy/requirements.txt
 
       - name: Install Databricks CLI
-        uses: databricks/setup-databricks@v3
+        uses: databricks/setup-cli@main
 
       - name: Deploy to DEV
         env:
