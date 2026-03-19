@@ -75,6 +75,7 @@ install_deps() {
 resolve_auth() {
     cd "${PROJECT_ROOT}"
     echo "[INFO] Resolving Databricks host..."
+
     export DATABRICKS_HOST
     DATABRICKS_HOST=$(python3 -c "
 import sys
@@ -82,6 +83,9 @@ sys.path.insert(0, '${SCRIPT_DIR}')
 import config
 print(config.get_host('TARGET'))
 ")
+    echo "[INFO] DATABRICKS_HOST = $DATABRICKS_HOST"
+
+    echo "[INFO] Resolving Databricks token..."
     export DATABRICKS_TOKEN
     DATABRICKS_TOKEN=$(python3 -c "
 import sys
@@ -89,6 +93,7 @@ sys.path.insert(0, '${SCRIPT_DIR}')
 import config
 print(config.get_token('TARGET'))
 ")
+    echo "[INFO] DATABRICKS_TOKEN = *** (set)"
 }
 
 
@@ -114,6 +119,8 @@ upload_wheel() {
     cd "${PROJECT_ROOT}"
 
     WHEEL_VOLUME_PATH=$(python3 -c "
+import sys
+sys.path.insert(0, '${SCRIPT_DIR}')
 import config, yaml
 s = yaml.safe_load(open('deploy/targets/TARGET/settings.yml'))
 print(s['targets']['TARGET']['variables'].get('wheel_path', ''))
@@ -124,9 +131,9 @@ print(s['targets']['TARGET']['variables'].get('wheel_path', ''))
         return
     fi
 
-    # Upload wheel file
+    echo "[INFO] Wheel volume path: $WHEEL_VOLUME_PATH"
     databricks fs cp "${WHEEL_FILE}" "${WHEEL_VOLUME_PATH}" --overwrite
-    echo "[INFO] Wheel uploaded -> $WHEEL_VOLUME_PATH"
+    echo "[INFO] Wheel uploaded → $WHEEL_VOLUME_PATH ✓"
 }
 
 
