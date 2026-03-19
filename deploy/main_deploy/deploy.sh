@@ -166,19 +166,102 @@ upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
 }
 
 
+# deploy_bundle() {
+#     echo "[INFO] Deploying Databricks Asset Bundle..."
+#     cd "${PROJECT_ROOT}"
+
+#     databricks bundle deploy -t TARGET
+
+#     echo ""
+#     echo "======================================================"
+#     echo "  Deployment complete ✓"
+#     echo "  Environment : $ENV"
+#     echo "  Host        : $DATABRICKS_HOST"
+#     echo "  Wheel       : $WHEEL_FILE"
+#     echo "======================================================"
+# }
 deploy_bundle() {
     echo "[INFO] Deploying Databricks Asset Bundle..."
     cd "${PROJECT_ROOT}"
 
-    databricks bundle deploy -t TARGET
+    databricks bundle deploy -t TARGET 2>&1
+    EXIT_CODE=$?
 
-    echo ""
-    echo "======================================================"
-    echo "  Deployment complete ✓"
-    echo "  Environment : $ENV"
-    echo "  Host        : $DATABRICKS_HOST"
-    echo "  Wheel       : $WHEEL_FILE"
-    echo "======================================================"
+    if [[ $EXIT_CODE -ne 0 ]]; then
+        echo "[WARN] bundle deploy failed (possibly CE SCIM restriction)"
+        echo "[INFO] Falling back to direct Jobs API deploy..."
+        deploy_via_jobs_api
+    fi
+}
+
+deploy_via_jobs_api() {
+    echo "[INFO] Deploying job via REST API..."
+    python3 -c "
+import sys, requests, json, os, yaml
+sys.path.insert(0, '${SCRIPT_DIR}')
+
+host  = os.environ['DATABRICKS_HOST'].rstrip('/')
+token = os.environ['DATABRICKS_TOKEN']
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type':  'application/json',
+}
+
+# Load job definition from pipeline.yml
+# For CE, create a minimal job directly via API
+job_payload = {
+    'name': 'trade-analytics-pipeline-TARGET',
+    'tasks': [
+        {
+            'task_key': 'bronze_ingest',
+            'notebook_task': {
+                'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/01_bronze_ingest',
+            },
+            'existing_cluster_id': '${CLUSTER_ID}',
+            'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
+        },
+        {
+            'task_key': 'silver_transform',
+            'depends_on': [{'task_key': 'bronze_ingest'}],
+            'notebook_task': {
+                'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/02_silver_transform',
+            },
+            'existing_cluster_id': '${CLUSTER_ID}',
+            'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
+        },
+        {
+            'task_key': 'dbt_gold',
+            'depends_on': [{'task_key': 'silver_transform'}],
+            'notebook_task': {
+                'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/03_run_dbt',
+            },
+            'existing_cluster_id': '${CLUSTER_ID}',
+            'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
+        },
+    ],
+}
+
+# Check if job already exists
+resp = requests.get(f'{host}/api/2.1/jobs/list', headers=headers)
+jobs = resp.json().get('jobs', [])
+existing = [j for j in jobs if j['settings']['name'] == job_payload['name']]
+
+if existing:
+    job_id = existing[0]['job_id']
+    resp = requests.post(
+        f'{host}/api/2.1/jobs/reset',
+        headers=headers,
+        json={'job_id': job_id, 'new_settings': job_payload},
+    )
+    print(f'Job updated (id={job_id}): {resp.status_code}')
+else:
+    resp = requests.post(
+        f'{host}/api/2.1/jobs/create',
+        headers=headers,
+        json=job_payload,
+    )
+    print(f'Job created: {resp.status_code} {resp.json()}')
+"
 }
 
 
