@@ -1,7 +1,7 @@
 targets:
   TARGET:
     workspace:
-      host: " https://dbc-108aefc7-f8df.cloud.databricks.com"
+      host: "https://dbc-108aefc7-f8df.cloud.databricks.com"
 
     variables:
       auth_strategy: "pat"
