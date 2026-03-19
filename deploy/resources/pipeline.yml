@@ -72,7 +72,7 @@ resources:
               uc_volume:  "${var.uc_volume}"
 
           libraries:
-            - whl: "${var.wheel_path}"
+            - whl: "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl"
 
           timeout_seconds: 3600
           max_retries: 1

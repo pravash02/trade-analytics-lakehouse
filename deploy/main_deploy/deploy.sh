@@ -131,18 +131,38 @@ print(s['targets']['TARGET']['variables'].get('wheel_path', ''))
         return
     fi
 
-    # Upload with the versioned name first
-    databricks fs cp "${WHEEL_FILE}" "${WHEEL_VOLUME_PATH}" --overwrite
-
-    # Also upload as versioned filename alongside latest
-    # e.g. trade_analytics-0.1.0-py3-none-any.whl
     WHEEL_DIR=$(dirname "${WHEEL_VOLUME_PATH}")
     WHEEL_BASENAME=$(basename "${WHEEL_FILE}")
-    databricks fs cp "${WHEEL_FILE}" "${WHEEL_DIR}/${WHEEL_BASENAME}" --overwrite
+    WHEEL_VERSIONED_PATH="${WHEEL_DIR}/${WHEEL_BASENAME}"
 
-    echo "[INFO] Wheel uploaded:"
-    echo "       latest   → ${WHEEL_VOLUME_PATH}"
-    echo "       versioned→ ${WHEEL_DIR}/${WHEEL_BASENAME}"
+    echo "[INFO] Wheel volume path : ${WHEEL_VOLUME_PATH}"
+    echo "[INFO] Wheel versioned   : ${WHEEL_VERSIONED_PATH}"
+
+    # Use Databricks REST API to upload to Unity Catalog Volume
+    # databricks fs cp does not support /Volumes/ paths — use the Files API instead
+    python3 -c "
+import sys, requests, os
+sys.path.insert(0, '${SCRIPT_DIR}')
+
+host  = os.environ['DATABRICKS_HOST'].rstrip('/')
+token = os.environ['DATABRICKS_TOKEN']
+
+headers = {'Authorization': f'Bearer {token}'}
+
+def upload(local_path, volume_path):
+    url = f'{host}/api/2.0/fs/files{volume_path}'
+    with open(local_path, 'rb') as f:
+        resp = requests.put(url, headers=headers, data=f)
+    if resp.status_code not in (200, 204):
+        raise RuntimeError(f'Upload failed: {resp.status_code} {resp.text}')
+    print(f'[INFO] Uploaded → {volume_path} ✓')
+
+# Upload as latest
+upload('${WHEEL_FILE}', '${WHEEL_VOLUME_PATH}')
+
+# Upload as versioned
+upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
+"
 }
 
 
