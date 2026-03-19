@@ -127,13 +127,22 @@ print(s['targets']['TARGET']['variables'].get('wheel_path', ''))
 ")
 
     if [[ -z "$WHEEL_VOLUME_PATH" ]]; then
-        echo "[WARN] wheel_path not set in settings.yml — skipping upload"
+        echo "[WARN] wheel_path not set — skipping upload"
         return
     fi
 
-    echo "[INFO] Wheel volume path: $WHEEL_VOLUME_PATH"
+    # Upload with the versioned name first
     databricks fs cp "${WHEEL_FILE}" "${WHEEL_VOLUME_PATH}" --overwrite
-    echo "[INFO] Wheel uploaded → $WHEEL_VOLUME_PATH ✓"
+
+    # Also upload as versioned filename alongside latest
+    # e.g. trade_analytics-0.1.0-py3-none-any.whl
+    WHEEL_DIR=$(dirname "${WHEEL_VOLUME_PATH}")
+    WHEEL_BASENAME=$(basename "${WHEEL_FILE}")
+    databricks fs cp "${WHEEL_FILE}" "${WHEEL_DIR}/${WHEEL_BASENAME}" --overwrite
+
+    echo "[INFO] Wheel uploaded:"
+    echo "       latest   → ${WHEEL_VOLUME_PATH}"
+    echo "       versioned→ ${WHEEL_DIR}/${WHEEL_BASENAME}"
 }
 
 

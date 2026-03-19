@@ -1,9 +1,5 @@
 bundle:
   name: trade-analytics-lakehouse
-  version: "0.1.0"
-
-terraform:
-  exec_path: ""
 
 include:
   - deploy/targets/TARGET/settings.yml
@@ -30,6 +26,9 @@ sync:
     - "*.whl"
 
 variables:
+  org_id:
+    description: "Databricks workspace org ID (used for direct links)"
+    default: ""
 
   workspace_host:
     description: "Databricks workspace URL (https://...)"
