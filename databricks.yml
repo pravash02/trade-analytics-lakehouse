@@ -1,8 +1,9 @@
 bundle:
   name: trade-analytics-lakehouse
-  version: 0.1.0
-  terraform:
-    exec_path: "deploy/terraform/1.8.1/terraform"
+  version: "0.1.0"
+
+terraform:
+  exec_path: ""
 
 include:
   - deploy/targets/TARGET/settings.yml
@@ -10,30 +11,101 @@ include:
 
 sync:
   include:
-    - pipeline/
-    - deploy/
+    - databricks_notebooks/
+    - dbt_project/
+    - deploy/resources/
   exclude:
-   - .*/
-   - deploy/main_deploy/
-   - deploy/targets/
-   - tests/
-   -  databricks.yml
-   - __pycache__/
+    - ".*"
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - "**/*.egg-info/**"
+    - "deploy/main_deploy/**"
+    - "deploy/targets/**"
+    - "databricks.yml"
+    - "delta/**"
+    - "venv/**"
+    - ".venv/**"
+    - "tests/**"
+    - "dist/**"
+    - "*.whl"
 
 variables:
-   namespace:
-    vault_url:
-    secret_path:
-    cert_role:
-    cert_path:
-    cert_key_path:
-    cluster_id:
-    warehouse_id:
+
+  workspace_host:
+    description: "Databricks workspace URL (https://...)"
+    default: ""
+
+  cluster_id:
+    description: "Interactive cluster ID (used for notebook tasks)"
+    default: ""
+
+  warehouse_id:
+    description: "SQL Warehouse ID (used for dbt HTTP path)"
+    default: ""
+
+  http_path:
+    description: "SQL Warehouse HTTP path for dbt-databricks"
+    default: ""
+
+  uc_catalog:
+    description: "Unity Catalog catalog name"
+    default: "workspace"
+
+  uc_schema:
+    description: "Unity Catalog schema name"
+    default: "default"
+
+  uc_volume:
+    description: "Unity Catalog volume name"
+    default: "trade-analytics"
+
+  wheel_path:
+    description: "DBFS/Volume path where the built wheel is uploaded"
+    default: "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl"
+
+  dbt_schema:
+    description: "dbt target schema in Unity Catalog"
+    default: "trade_analytics_dev"
+
+  dbt_threads:
+    description: "dbt parallelism"
+    default: "4"
+
+  alert_email:
+    description: "Email address for job failure notifications"
+    default: "pravash.cse@gmail.com"
+
+  auth_strategy:
+    description: "Auth strategy: pat | spn"
+    default: "pat"
+
+  namespace:
+    description: "Vault namespace"
+    default: ""
+
+  vault_url:
+    description: "HashiCorp Vault URL"
+    default: ""
+
+  secret_path:
+    description: "Vault secret path for SPN creds"
+    default: ""
+
+  cert_role:
+    description: "Vault cert role name"
+    default: ""
+
+  cert_path:
+    description: "TLS client cert path on the runner"
+    default: ""
+
+  cert_key_path:
+    description: "TLS client private key path on the runner"
+    default: ""
 
 targets:
-  developer:
+  TARGET:
     mode: development
     default: true
-  
     workspace:
-        host: 
+      host: ${var.workspace_host}

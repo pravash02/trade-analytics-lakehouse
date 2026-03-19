@@ -2,13 +2,10 @@
 End-to-end Lakehouse pipeline ingesting 50K+ financial trade events via Kafka simulation, transforming through Medallion architecture on Databricks + Delta Lake with dbt-databricks, orchestrated by Airflow, with live analytics dashboard.
 
 
-# macOS / Linux
+## macOS / Linux
 chmod +x setup.sh && ./setup.sh
 
-# Windows (PowerShell as Administrator)
-.\setup.ps1
-
-# Already have Python 3.12+?
+## Already have Python 3.12+?
 python local_setup.py
 
 
@@ -45,3 +42,19 @@ Create Environment: `python3.12 -m venv .venv`
 Activate Environment: `source .venv/bin/activate`
 
 Install dependencies: `pip install -e ".[dev]"`
+
+
+## Set your Databricks PAT Token (DEV)
+1. Go to: <databricks-host>
+2. Click your profile (top right) -> Settings
+3. Developer -> Access tokens -> Generate new token
+4. Name it github-actions-dev, set expiry to 90 days
+
+
+## Set GitHub Secrets
+1. Settings -> Secrets and variables -> Actions -> New repository secret
+2. Required for DEV (PAT auth): 
+        Secret name: DATABRICKS_TOKEN_DEV 
+        Value: Your Databricks PATD
+        Where to get it: databricks -> Settings -> Developer -> Access tokens
+3. Copy the token and add as DATABRICKS_TOKEN_DEV secret

@@ -1,177 +1,193 @@
-import pathlib, os, yaml, logging, requests, json
-import token
-import urllib.parse as urljoin
-
+import json
+import logging
+import os
+import pathlib
+import requests
+import yaml
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
-    level=logging.INFO
+    level=logging.INFO,
 )
 log = logging.getLogger(__name__)
-_ROOT = pathlib.Path(__file__).parent.resolve()
+
+_ROOT = pathlib.Path(__file__).parent.parent.parent.resolve()
 
 
-def get_config(path: str) -> dict:
-    """
-    Loads a YAML configuration file and returns its contents as a dictionary.
-    """
-    with open(path, "r") as file:
-        config = yaml.safe_load(file)
-        return config
+def _load_yaml(path: str) -> dict:
+    with open(path, "r") as fh:
+        return yaml.safe_load(fh)
+
+
+def _get_settings(env: str) -> dict:
+    path = _ROOT / "deploy" / "targets" / env / "settings.yml"
+    if not path.exists():
+        raise FileNotFoundError(f"settings.yml not found for env '{env}': {path}")
+
+    raw = _load_yaml(str(path))
+    try:
+        return raw["targets"]["TARGET"]
+    except KeyError as e:
+        raise KeyError(
+            f"settings.yml for '{env}' is missing key: {e}\n"
+            f"Expected structure: targets > TARGET > workspace / variables"
+        )
 
 
 def get_host(env: str) -> str:
-    """
-    Determines the Databricks host to connect to based on the environment.
-    """
-    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
-    host = config["targets"][env]["workspace"]["host"]
-
-    print(f"Determined host for environment '{env}': {host}")
+    settings = _get_settings(env)
+    host = settings.get("workspace", {}).get("host", "").strip().rstrip("/")
+    if not host:
+        raise ValueError(f"[{env}] workspace.host is empty in settings.yml")
+    log.info(f"[{env}] Host: {host}")
     return host
 
 
-def get_spn_creds(vault_url: str, namespace: str, secret_path: str, cert_role: str, cert_path: str, cert_key_path: str) -> dict:
-    """
-    Retrieves service principal credentials from EVA vault.
-    """
-    if not ca_certs:
-        ca_certs = ""
-
-    url = f"{vault_url}/api/v1/secrets/{namespace}/{secret_path}"
-    cert = (cert_path, cert_key_path)
-
-    try:
-        url = urljoin(vault_url, "v1/auth/cert/login")
-        headers = {"X-Vault-Namespace": namespace}
-        data = {"name": cert_role}
-        response = requests.post(url, headers=headers, data=json.dumps(data), cert=(cert_path, cert_key_path), verify=ca_certs)
-        token = response.json().get("auth", {}).get("client_token")
-
-        url = urljoin(vault_url, os.path.join(f"v1/secrets/data", secret_path))
-        headers = {"X-Vault-Token": token, "X-Vault-Namespace": namespace}
-        response = requests.get(url, headers=headers, verify=ca_certs)
-        data = response.json().get("data", {}).get("data", {})
-
-        return {
-            "client_id": data.get("client-id"),
-            "client_secret": data.get("secret")
-        }
-
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to retrieve SPN credentials: {e}")
-        raise RuntimeError("SPN credentials retrieval failed.")
-
-
-def get_aad_token(tenant_id: str, client_id: str, client_secret: str, resource_id: str) -> str:
-    """
-    Retrieves an Azure AD access token for the given service principal credentials and resource ID.
-    """
-    url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
-    payload = {
-        "grant_type": "client_credentials",
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "resource": resource_id
-    }
-
-    response = requests.post(url, data=payload)
-    if response.status_code == 200:
-        token = response.json().get("access_token")
-        return token
-    else:
-        logging.error(f"Failed to retrieve AAD token: {response.status_code} {response.text}")
-        raise RuntimeError("AAD token retrieval failed.")
-
-
-def get_access_token(variables: dict, resource_id: str) -> str:
-    """
-    Retrieves the Databricks access token for a service principle using credentials stroed in EVA.
-    """
-    tenant_id = os.getenv("AZ_TENANT_ID")
-    client_id = os.getenv("AZ_CLIENT_ID")
-    client_secret = os.getenv("AZ_CLIENT_SECRET")
-
-    if not tenant_id:
-        tenant_id = ""
-    
-    if not client_secret:
-        spn_creds = (
-            get_spn_creds(
-                variables["vault_url"],
-                variables["namespace"],
-                variables["secret_path"],
-                variables["cert_role"],
-                variables["cert_path"],
-                variables["cert_key_path"]
-            )
-        )
-    
-    if spn_creds:
-        client_id = spn_creds["client_id"]
-        client_secret = spn_creds["client_secret"]
-    
-    if not client_id:
-        logging.error("Missing deploy SPN client ID or client secret. Check environment variables and/or SPN credentials retrieval.")
-
-    return get_aad_token(tenant_id, client_id, client_secret, resource_id)
-
-
-def get_databricks_access_token(variables: dict) -> str:
-    """
-    Retrieves the Databricks access token for a service principle using credentials stroed in EVA.
-    """
-    resource_id = "" 
-    return get_access_token(variables, resource_id)
-
-
 def get_token(env: str) -> str:
-    """
-    Determines the Databricks token to connect to based on the environment.
-    """
-    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
-    variables = config["targets"][env]["variables"]
+    settings  = _get_settings(env)
+    variables = settings.get("variables", {})
+    strategy  = variables.get("auth_strategy", "pat").strip().lower()
 
-    strategy  = variables.get("auth_strategy", "pat").lower()
+    log.info(f"[{env}] Auth strategy: {strategy}")
+
     if strategy == "pat":
-        token = _get_pat(env, variables)
+        return _get_pat(env, variables)
+    elif strategy == "spn":
+        return _get_spn_token(env, variables)
     else:
         raise ValueError(
-            f"[{env}] Unknown auth_strategy '{strategy}' in settings.yaml.\n"
-            f"Valid values: 'pat'  |  'spn' (uncomment spn block in config.py first)"
+            f"[{env}] Unknown auth_strategy '{strategy}' in settings.yml. "
+            f"Valid values: 'pat' | 'spn'"
         )
-
-    print(token)
-    return token
 
 
 def get_http_path(env: str) -> str:
-    """
-    Returns the SQL Warehouse HTTP path for the given environment.
-    """
-    config = get_config(f"{_ROOT}/deploy/targets/{env}/settings.yaml")
-    variables = config["targets"][env]["variables"]
+    settings  = _get_settings(env)
+    variables = settings.get("variables", {})
     http_path = str(variables.get("http_path", "")).strip()
-
-    log.info(f"[{env}] HTTP Path: {http_path}")
+    if not http_path:
+        log.warning(f"[{env}] http_path is empty in settings.yml")
+    log.info(f"[{env}] HTTP path: {http_path}")
     return http_path
 
 
 def _get_pat(env: str, variables: dict) -> str:
-    """
-    Returns a Personal Access Token.
-    """
     token = os.environ.get("DATABRICKS_TOKEN", "").strip()
     if token:
-        log.info(f"[{env}] PAT from DATABRICKS_TOKEN env var")
+        log.info(f"[{env}] PAT resolved from DATABRICKS_TOKEN env var")
         return token
 
     token = str(variables.get("pat_token", "")).strip()
     if token:
-        log.info(f"[{env}] PAT from settings.yaml")
+        log.info(f"[{env}] PAT resolved from settings.yml (pat_token)")
         return token
 
     raise EnvironmentError(
         f"\n[{env}] No PAT token found. Do one of:\n"
+        f"  1. Set GitHub Secret DATABRICKS_TOKEN_DEV and export as DATABRICKS_TOKEN in CI\n"
+        f"  2. Set pat_token in deploy/targets/DEV/settings.yml (dev only — never commit)\n"
     )
+
+
+def _get_spn_token(env: str, variables: dict) -> str:
+    tenant_id = os.environ.get("AZ_TENANT_ID", "").strip()
+    if not tenant_id:
+        raise EnvironmentError(
+            f"[{env}] AZ_TENANT_ID env var is not set. "
+            f"Set it as a GitHub Secret and export it in your workflow."
+        )
+
+    # Allow env vars to override Vault lookup for CI convenience
+    client_id     = os.environ.get("AZ_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("AZ_CLIENT_SECRET", "").strip()
+
+    if not (client_id and client_secret):
+        log.info(f"[{env}] AZ_CLIENT_ID/SECRET not in env — fetching from Vault")
+        creds         = _get_spn_creds_from_vault(env, variables)
+        client_id     = creds["client_id"]
+        client_secret = creds["client_secret"]
+
+    return _get_aad_token(env, tenant_id, client_id, client_secret)
+
+
+def _get_spn_creds_from_vault(env: str, variables: dict) -> dict:
+    vault_url     = variables.get("vault_url", "").rstrip("/")
+    namespace     = variables.get("namespace", "")
+    secret_path   = variables.get("secret_path", "")
+    cert_role     = variables.get("cert_role", "")
+    cert_path     = variables.get("cert_path", "")
+    cert_key_path = variables.get("cert_key_path", "")
+
+    if not all([vault_url, namespace, secret_path, cert_role, cert_path, cert_key_path]):
+        raise ValueError(
+            f"[{env}] Vault config incomplete in settings.yml. "
+            f"Required: vault_url, namespace, secret_path, cert_role, cert_path, cert_key_path"
+        )
+
+    cert = (cert_path, cert_key_path)
+
+    # Authenticate to Vault via mTLS cert → get client token
+    login_url = f"{vault_url}/v1/auth/cert/login"
+    headers   = {"X-Vault-Namespace": namespace}
+    data      = {"name": cert_role}
+
+    try:
+        resp = requests.post(
+            login_url,
+            headers=headers,
+            data=json.dumps(data),
+            cert=cert,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        vault_token = resp.json().get("auth", {}).get("client_token")
+        if not vault_token:
+            raise RuntimeError(f"[{env}] Vault login succeeded but no client_token in response")
+        log.info(f"[{env}] Vault authentication successful")
+
+    except requests.RequestException as e:
+        raise RuntimeError(f"[{env}] Vault login failed: {e}")
+
+    # Read SPN credentials from Vault KV
+    secret_url = f"{vault_url}/v1/secret/data/{secret_path.lstrip('/')}"
+    headers    = {"X-Vault-Token": vault_token, "X-Vault-Namespace": namespace}
+
+    try:
+        resp = requests.get(secret_url, headers=headers, cert=cert, timeout=30)
+        resp.raise_for_status()
+        data = resp.json().get("data", {}).get("data", {})
+        client_id     = data.get("client-id", "")
+        client_secret = data.get("secret", "")
+
+        if not (client_id and client_secret):
+            raise RuntimeError(
+                f"[{env}] Vault secret at '{secret_path}' is missing 'client-id' or 'secret' key"
+            )
+        log.info(f"[{env}] SPN credentials retrieved from Vault")
+        return {"client_id": client_id, "client_secret": client_secret}
+
+    except requests.RequestException as e:
+        raise RuntimeError(f"[{env}] Vault secret read failed: {e}")
+
+
+def _get_aad_token(env: str, tenant_id: str, client_id: str, client_secret: str) -> str:
+    resource_id = "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+    url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/token"
+    payload = {
+        "grant_type":    "client_credentials",
+        "client_id":     client_id,
+        "client_secret": client_secret,
+        "resource":      resource_id,
+    }
+
+    try:
+        resp = requests.post(url, data=payload, timeout=30)
+        resp.raise_for_status()
+        token = resp.json().get("access_token", "")
+        if not token:
+            raise RuntimeError(f"[{env}] AAD token response missing access_token")
+        log.info(f"[{env}] AAD token acquired successfully")
+        return token
+
+    except requests.RequestException as e:
+        raise RuntimeError(f"[{env}] AAD token request failed: {e}")

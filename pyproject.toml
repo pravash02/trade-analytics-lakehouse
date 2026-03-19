@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "trade-analytics-lakehouse"
+name = "trade-analytics"
 version = "0.1.0"
 description = "Databricks Lakehouse project with Delta Tables, PySpark, and Prefect"
 readme = "README.md"
@@ -46,24 +46,24 @@ dev = [
     "pre-commit>=3.7.0",
 ]
 databricks = [
-    "databricks-connect>=15.1.0",   # Only install when connecting to Databricks
+    "databricks-connect>=15.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = []
+packages = ["src/trade_analytics"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing"
+addopts   = "--cov=src --cov-report=term-missing"
 
 [tool.ruff]
-line-length = 88
+line-length    = 100
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version      = "3.12"
 ignore_missing_imports = true
-strict = false
+strict              = false

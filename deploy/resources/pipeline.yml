@@ -1,0 +1,108 @@
+resources:
+  jobs:
+    trade_analytics_pipeline:
+      name: "trade-analytics-pipeline-${bundle.target}"
+      description: "End-to-end trade analytics pipeline: Bronze -> Silver -> dbt Gold"
+
+      schedule:
+        quartz_cron_expression: "0 0 5 * * ?"
+        timezone_id: "Europe/Berlin"
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+        no_alert_for_skipped_runs: true
+
+      max_concurrent_runs: 1
+
+      ## ── Cluster used by all tasks ───────────────────────────────────────────
+      ## Uses the existing interactive cluster — no cluster_key needed per task.
+      ## For PROD, replace with job_clusters block for isolated compute.
+      #
+      # job_clusters:
+      #   - job_cluster_key: pipeline_cluster
+      #     new_cluster:
+      #       spark_version: "14.3.x-scala2.12"
+      #       node_type_id:  "Standard_DS3_v2"
+      #       num_workers:   2
+      #       spark_env_vars:
+      #         SPARK_ENV:    "databricks"
+      #         UC_CATALOG:   "workspace"
+      #         UC_SCHEMA:    "default"
+      #         UC_VOLUME:    "trade-analytics"
+
+      tasks:
+
+        - task_key: bronze_ingest
+          description: "Ingest trades.jsonl -> Pydantic validation -> Bronze Delta + Quarantine"
+
+          existing_cluster_id: ${var.cluster_id}
+
+          notebook_task:
+            notebook_path: "/Workspace/Shared/${bundle.name}/databricks_notebooks/01_bronze_ingest"
+            base_parameters:
+              env:           "${bundle.target}"
+              uc_catalog:    "${var.uc_catalog}"
+              uc_schema:     "${var.uc_schema}"
+              uc_volume:     "${var.uc_volume}"
+
+          libraries:
+            - whl: "${var.wheel_path}"
+
+          timeout_seconds: 1800
+          max_retries: 1
+          retry_on_timeout: true
+          min_retry_interval_millis: 60000
+
+        - task_key: silver_transform
+          description: "PySpark: Bronze -> Silver Delta (FX normalisation, window functions, risk flags)"
+
+          depends_on:
+            - task_key: bronze_ingest
+
+          existing_cluster_id: ${var.cluster_id}
+
+          notebook_task:
+            notebook_path: "/Workspace/Shared/${bundle.name}/databricks_notebooks/02_silver_transform"
+            base_parameters:
+              env:        "${bundle.target}"
+              uc_catalog: "${var.uc_catalog}"
+              uc_schema:  "${var.uc_schema}"
+              uc_volume:  "${var.uc_volume}"
+
+          libraries:
+            - whl: "${var.wheel_path}"
+
+          timeout_seconds: 3600
+          max_retries: 1
+          retry_on_timeout: false
+          min_retry_interval_millis: 120000
+
+        - task_key: dbt_gold
+          description: "dbt run + test: Silver -> Gold Delta marts (staging -> intermediate -> marts)"
+
+          depends_on:
+            - task_key: silver_transform
+
+          existing_cluster_id: ${var.cluster_id}
+
+          notebook_task:
+            notebook_path: "/Workspace/Shared/${bundle.name}/databricks_notebooks/03_run_dbt"
+            base_parameters:
+              env:        "${bundle.target}"
+              uc_catalog: "${var.uc_catalog}"
+              uc_schema:  "${var.uc_schema}"
+              uc_volume:  "${var.uc_volume}"
+              http_path:  "${var.http_path}"
+              dbt_schema: "${var.dbt_schema}"
+
+          libraries:
+            - whl: "${var.wheel_path}"
+
+          timeout_seconds: 3600
+          max_retries: 0
+
+      permissions:
+        - level: CAN_MANAGE_RUN
+          group_name: users

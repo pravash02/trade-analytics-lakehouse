@@ -1,0 +1,144 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - DEV
+          - UAT
+          - PROD
+        default: DEV
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+
+  deploy-dev:
+    name: Deploy -> DEV
+    runs-on: ubuntu-latest
+    environment: DEV
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Install deploy dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r deploy/main_deploy/requirements.txt
+
+      - name: Deploy to DEV
+        env:
+          ENV:                 "DEV"
+          DATABRICKS_TOKEN:    ${{ secrets.DATABRICKS_TOKEN_DEV }}
+          ## SPN vars — not needed for DEV (PAT auth), included for completeness
+          AZ_TENANT_ID:        ${{ secrets.AZ_TENANT_ID }}
+          AZ_CLIENT_ID:        ${{ secrets.AZ_CLIENT_ID }}
+          AZ_CLIENT_SECRET:    ${{ secrets.AZ_CLIENT_SECRET }}
+        run: |
+          chmod +x deploy/main_deploy/env.sh
+          bash deploy/main_deploy/env.sh
+
+      - name: Verify deployment
+        env:
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
+        run: |
+          ## Quick smoke test — list deployed jobs
+          export DATABRICKS_HOST=$(python3 -c "
+          import sys; sys.path.insert(0, 'deploy/main_deploy')
+          import config, shutil
+          shutil.copy('deploy/targets/DEV/settings.yml', 'deploy/targets/TARGET/settings.yml')
+          print(config.get_host('TARGET'))
+          ")
+          ./databricks jobs list --output JSON | python3 -c "
+          import json, sys
+          jobs = json.load(sys.stdin).get('jobs', [])
+          found = [j for j in jobs if 'trade-analytics' in j.get('settings', {}).get('name', '')]
+          if not found:
+              print('WARNING: trade-analytics job not found after deploy')
+              sys.exit(1)
+          print(f'Job deployed successfully: {found[0][\"settings\"][\"name\"]}')
+          "
+
+  deploy-uat:
+    name: Deploy -> UAT
+    runs-on: ubuntu-latest
+    environment: UAT
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'UAT'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install build tools + deploy deps
+        run: |
+          pip install build
+          pip install -r deploy/main_deploy/requirements.txt
+
+      - name: Deploy to UAT
+        env:
+          ENV:              "UAT"
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_UAT }}
+          AZ_TENANT_ID:     ${{ secrets.AZ_TENANT_ID }}
+          AZ_CLIENT_ID:     ${{ secrets.AZ_CLIENT_ID }}
+          AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
+        run: |
+          chmod +x deploy/main_deploy/env.sh
+          bash deploy/main_deploy/env.sh
+
+  deploy-prod:
+    name: Deploy -> PROD
+    runs-on: ubuntu-latest
+    environment: PROD       
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'PROD'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install build tools + deploy deps
+        run: |
+          pip install build
+          pip install -r deploy/main_deploy/requirements.txt
+
+      - name: Deploy to PROD
+        env:
+          ENV:              "PROD"
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+          AZ_TENANT_ID:     ${{ secrets.AZ_TENANT_ID }}
+          AZ_CLIENT_ID:     ${{ secrets.AZ_CLIENT_ID }}
+          AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
+        run: |
+          chmod +x deploy/main_deploy/env.sh
+          bash deploy/main_deploy/env.sh
