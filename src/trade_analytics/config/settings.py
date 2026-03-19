@@ -1,6 +1,6 @@
 import os
-from src.trade_analytics.config.enums import SPARK_ENV, SparkEnv, StorageLayer
 
+from src.trade_analytics.config.enums import SPARK_ENV, SparkEnv
 
 if SPARK_ENV == SparkEnv.DATABRICKS:
     # abfss location

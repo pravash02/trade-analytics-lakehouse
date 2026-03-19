@@ -1,9 +1,9 @@
 import os
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum, StrEnum
 
 
-class SparkEnv(str, Enum):
+class SparkEnv(StrEnum, Enum):
     LOCAL      = "local"
     DATABRICKS = "databricks"
 
@@ -11,14 +11,14 @@ class SparkEnv(str, Enum):
 SPARK_ENV = SparkEnv(os.getenv("SPARK_ENV", SparkEnv.LOCAL.value))
 
 
-class StorageLayer(str, Enum):
+class StorageLayer(StrEnum, Enum):
     BRONZE     = "bronze"
     SILVER     = "silver"
     GOLD       = "gold"
     QUARANTINE = "quarantine"
 
 
-class StorageType(str, Enum):
+class StorageType(StrEnum, Enum):
     DBFS    = "dbfs"
     VOLUME  = "volume"
     LOCAL   = "local"

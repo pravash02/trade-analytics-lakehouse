@@ -20,14 +20,13 @@ Called by:
     - Direct CLI run during development
 """
 
+import os
 import subprocess
 import sys
-import os
 from datetime import timedelta
 
-from prefect import flow, task, get_run_logger
+from prefect import flow, get_run_logger, task
 from prefect.tasks import task_input_hash
-
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SRC  = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
@@ -241,8 +240,14 @@ def trade_pipeline(
         wait_for=[dbt_test_result],
     )
 
+    logger.info(
+    f"Exported {len(export_result['exported_tables'])} tables "
+    f"-> {export_result['output_dir']}: "
+    f"{', '.join(export_result['exported_tables'])}"
+)
+
     logger.info("=" * 54)
-    logger.info("  Trade Analytics Pipeline — complete ✓")
+    logger.info("  Trade Analytics Pipeline — complete")
     logger.info("=" * 54)
 
 

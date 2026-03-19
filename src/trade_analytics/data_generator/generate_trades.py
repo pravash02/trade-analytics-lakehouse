@@ -1,11 +1,12 @@
 import json
-from pathlib import Path
 import random
 import uuid
 from datetime import datetime, timedelta
-from faker import Faker
-from src.trade_analytics.config.settings import INSTRUMENTS, DESKS, REGIONS
+from pathlib import Path
 
+from faker import Faker
+
+from src.trade_analytics.config.settings import INSTRUMENTS, REGIONS
 
 fake = Faker()
 random.seed(42)

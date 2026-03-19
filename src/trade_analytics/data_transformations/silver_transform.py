@@ -1,22 +1,26 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
-    DecimalType, TimestampType, DateType,
-    IntegerType, BooleanType, StringType
+    BooleanType,
+    DateType,
+    DecimalType,
+    IntegerType,
 )
 from pyspark.sql.window import Window
-from src.trade_analytics.config.spark_session import get_spark
+
 from src.trade_analytics.config.settings import (
     BRONZE_PATH,
-    SILVER_PATH,
-    LARGE_TRADE_THRESHOLD_EUR,
-    VELOCITY_MAX_TRADES,
     FX_RATES_TO_EUR,
+    LARGE_TRADE_THRESHOLD_EUR,
+    SILVER_PATH,
+    VELOCITY_MAX_TRADES,
 )
+from src.trade_analytics.config.spark_session import get_spark
 from src.trade_analytics.config.utils import configure_adls_auth
 
 _FX_MAP: dict[str, float] = FX_RATES_TO_EUR
@@ -53,7 +57,7 @@ def _read_bronze(spark: SparkSession) -> DataFrame:
     """
     df = spark.read.format("delta").load(BRONZE_PATH)
     print(f"[Bronze] Row count : {df.count():,}")
-    print(f"[Bronze] Schema    :")
+    print("[Bronze] Schema    :")
     df.printSchema()
     return df
 
@@ -305,7 +309,7 @@ def _print_summary(spark: SparkSession) -> None:
 
     print("  Velocity-flagged trades:")
     (
-        df.filter(F.col("velocity_flag") == True)
+        df.filter(F.col("velocity_flag"))
           .groupBy("trader_id")
           .agg(F.count("trade_id").alias("flagged_trades"))
           .orderBy(F.col("flagged_trades").desc())

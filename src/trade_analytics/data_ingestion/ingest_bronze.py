@@ -1,11 +1,11 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import current_timestamp, lit
-from delta import configure_spark_with_delta_pip
-from pydantic import ValidationError
 import json
-from src.trade_analytics.data_ingestion.schema import TradeEvent
+
+from pydantic import ValidationError
+from pyspark.sql.functions import current_timestamp, lit
+
 from src.trade_analytics.config.settings import BRONZE_PATH, QUARANTINE_PATH
 from src.trade_analytics.config.spark_session import get_spark
+from src.trade_analytics.data_ingestion.schema import TradeEvent
 
 spark = get_spark("TradeAnalyticsLakehouse")
 
