@@ -77,18 +77,18 @@ resolve_auth() {
     echo "[INFO] Resolving Databricks host..."
     export DATABRICKS_HOST
     DATABRICKS_HOST=$(python3 -c "
-        import sys
-        sys.path.insert(0, '${SCRIPT_DIR}')
-        import config
-        print(config.get_host('TARGET'))
-        ")
+import sys
+sys.path.insert(0, '${SCRIPT_DIR}')
+import config
+print(config.get_host('TARGET'))
+")
     export DATABRICKS_TOKEN
     DATABRICKS_TOKEN=$(python3 -c "
-        import sys
-        sys.path.insert(0, '${SCRIPT_DIR}')
-        import config
-        print(config.get_token('TARGET'))
-        ")
+import sys
+sys.path.insert(0, '${SCRIPT_DIR}')
+import config
+print(config.get_token('TARGET'))
+")
 }
 
 
