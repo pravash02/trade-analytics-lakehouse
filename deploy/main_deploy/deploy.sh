@@ -59,10 +59,10 @@ patch_terraform_path() {
 }
 
 
-copy_config() {
-    # cp "${SCRIPT_DIR}/config.py" "${PROJECT_ROOT}/config.py"
-    echo "[INFO] config.py copied to project root"
-}
+# copy_config() {
+#     cp "${SCRIPT_DIR}/config.py" "${PROJECT_ROOT}/config.py"
+#     echo "[INFO] config.py copied to project root"
+# }
 
 
 install_deps() {
@@ -180,18 +180,23 @@ upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
 #     echo "  Wheel       : $WHEEL_FILE"
 #     echo "======================================================"
 # }
+# deploy_bundle() {
+#     echo "[INFO] Deploying Databricks Asset Bundle..."
+#     cd "${PROJECT_ROOT}"
+
+#     databricks bundle deploy -t TARGET 2>&1
+#     EXIT_CODE=$?
+
+#     if [[ $EXIT_CODE -ne 0 ]]; then
+#         echo "[WARN] bundle deploy failed (possibly CE SCIM restriction)"
+#         echo "[INFO] Falling back to direct Jobs API deploy..."
+#         deploy_via_jobs_api
+#     fi
+# }
 deploy_bundle() {
-    echo "[INFO] Deploying Databricks Asset Bundle..."
-    cd "${PROJECT_ROOT}"
-
-    databricks bundle deploy -t TARGET 2>&1
-    EXIT_CODE=$?
-
-    if [[ $EXIT_CODE -ne 0 ]]; then
-        echo "[WARN] bundle deploy failed (possibly CE SCIM restriction)"
-        echo "[INFO] Falling back to direct Jobs API deploy..."
-        deploy_via_jobs_api
-    fi
+    echo "[INFO] Skipping bundle deploy (CE SCIM restriction)"
+    echo "[INFO] Deploying directly via Jobs REST API..."
+    deploy_via_jobs_api
 }
 
 
@@ -366,6 +371,27 @@ print('[INFO] Job deploy complete ✓')
 #     print(f'Job created: {resp.status_code} {resp.json()}')
 # "
 # }
+sync_notebooks() {
+    echo "[INFO] Syncing notebooks to Databricks workspace..."
+    cd "${PROJECT_ROOT}"
+
+    # Create target directory in workspace
+    databricks workspace mkdirs \
+        /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks \
+        2>/dev/null || true
+
+    # Upload each notebook
+    for nb in databricks_notebooks/*.ipynb; do
+        nb_name=$(basename "${nb}" .ipynb)
+        echo "[INFO] Uploading ${nb} → /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/${nb_name}"
+        databricks workspace import "${nb}" \
+            /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/${nb_name} \
+            --format JUPYTER \
+            --overwrite
+    done
+
+    echo "[INFO] Notebooks synced ✓"
+}
 
 
 main() {
@@ -379,11 +405,12 @@ main() {
     # init
     copy_env_settings
     patch_terraform_path
-    copy_config
+    # copy_config
     install_deps
     resolve_auth
     build_wheel
     upload_wheel
+    sync_notebooks
     deploy_bundle
 }
 

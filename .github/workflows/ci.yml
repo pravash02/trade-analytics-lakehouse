@@ -65,22 +65,45 @@ jobs:
         env:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
         run: |
-          ## Quick smoke test — list deployed jobs
-          export DATABRICKS_HOST=$(python3 -c "
-          import sys; sys.path.insert(0, 'deploy/main_deploy')
-          import config, shutil
-          shutil.copy('deploy/targets/DEV/settings.yml', 'deploy/targets/TARGET/settings.yml')
-          print(config.get_host('TARGET'))
-          ")
-          databricks jobs list --output JSON | python3 -c "
-          import json, sys
-          jobs = json.load(sys.stdin).get('jobs', [])
-          found = [j for j in jobs if 'trade-analytics' in j.get('settings', {}).get('name', '')]
-          if not found:
-              print('WARNING: trade-analytics job not found after deploy')
-              sys.exit(1)
-          print(f'Job deployed successfully: {found[0][\"settings\"][\"name\"]}')
+          python3 -c "
+          import requests, os, yaml
+
+          host  = open('deploy/targets/TARGET/settings.yml').read()
+          import yaml
+          s     = yaml.safe_load(open('deploy/targets/TARGET/settings.yml'))
+          host  = s['targets']['TARGET']['workspace']['host'].rstrip('/')
+          token = os.environ['DATABRICKS_TOKEN']
+
+          headers = {'Authorization': f'Bearer {token}'}
+          resp    = requests.get(
+              f'{host}/api/2.1/jobs/list',
+              headers=headers,
+          )
+          jobs  = resp.json().get('jobs', [])
+          match = [j for j in jobs if 'trade-analytics' in j['settings']['name']]
+          if not match:
+              print('WARNING: job not found after deploy')
+              exit(1)
+          print(f'Job verified: {match[0][\"settings\"][\"name\"]} ✓')
           "
+        # run: |
+        #   ## Quick smoke test — list deployed jobs
+        #   export DATABRICKS_HOST=$(python3 -c "
+        #   import sys; sys.path.insert(0, 'deploy/main_deploy')
+        #   import config, shutil
+        #   shutil.copy('deploy/targets/DEV/settings.yml', 'deploy/targets/TARGET/settings.yml')
+        #   print(config.get_host('TARGET'))
+        #   ")
+        #   databricks jobs list --output JSON | python3 -c "
+        #   import json, sys
+        #   jobs = json.load(sys.stdin).get('jobs', [])
+        #   found = [j for j in jobs if 'trade-analytics' in j.get('settings', {}).get('name', '')]
+        #   if not found:
+        #       print('WARNING: trade-analytics job not found after deploy')
+        #       sys.exit(1)
+        #   print(f'Job deployed successfully: {found[0][\"settings\"][\"name\"]}')
+        #   "
+
 
   deploy-uat:
     name: Deploy -> UAT
