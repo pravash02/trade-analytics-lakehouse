@@ -4,7 +4,7 @@ import random
 import uuid
 from datetime import datetime, timedelta
 from faker import Faker
-from config.settings import INSTRUMENTS, DESKS, REGIONS
+from src.trade_analytics.config.settings import INSTRUMENTS, DESKS, REGIONS
 
 
 fake = Faker()
@@ -43,7 +43,7 @@ def generate_trade(timestamp: datetime) -> dict:
         "is_anomaly":     is_anomaly,
     }
 
-def generate_dataset(n: int = 50_000, output_path: str = "./local_data/trades.jsonl"):
+def generate_dataset(n: int = 50_000, output_path: str = "./data/trades.jsonl"):
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     

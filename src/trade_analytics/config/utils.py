@@ -1,4 +1,4 @@
-from config.enums import ADLS, SPARK_ENV, SparkEnv, StorageLayer, StorageType
+from src.trade_analytics.config.enums import ADLS, SPARK_ENV, SparkEnv, StorageLayer, StorageType
 
 
 def abfss(layer: StorageLayer, subpath: str) -> str:
