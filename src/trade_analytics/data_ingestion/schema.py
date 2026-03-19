@@ -5,18 +5,18 @@ from pydantic import BaseModel, field_validator
 
 
 class TradeEvent(BaseModel):
-    trade_id:        str
-    trader_id:       str
-    instrument:      str
-    direction:       Literal["BUY", "SELL"]
-    notional:        float
-    price:           float
-    desk:            str
-    region:          str
-    counterparty:    str
-    status:          Literal["EXECUTED", "CANCELLED", "PENDING"]
+    trade_id: str
+    trader_id: str
+    instrument: str
+    direction: Literal["BUY", "SELL"]
+    notional: float
+    price: float
+    desk: str
+    region: str
+    counterparty: str
+    status: Literal["EXECUTED", "CANCELLED", "PENDING"]
     trade_timestamp: datetime
-    is_anomaly:      bool
+    is_anomaly: bool
 
     @field_validator("notional")
     def notional_must_be_positive(cls, v):

@@ -11,7 +11,7 @@ spark = get_spark("TradeAnalyticsLakehouse")
 
 
 def ingest_bronze(input_path: str = "./data/trades.jsonl"):
-    valid_records   = []
+    valid_records = []
     invalid_records = []
 
     with open(input_path) as f:
@@ -28,24 +28,20 @@ def ingest_bronze(input_path: str = "./data/trades.jsonl"):
 
     if valid_records:
         df_valid = spark.createDataFrame(valid_records)
-        df_valid = df_valid \
-            .withColumn("_ingested_at", current_timestamp()) \
-            .withColumn("_source", lit("trades_jsonl"))
+        df_valid = df_valid.withColumn("_ingested_at", current_timestamp()).withColumn(
+            "_source", lit("trades_jsonl")
+        )
 
-        df_valid.write.format("delta") \
-            .mode("append") \
-            .save(BRONZE_PATH)
+        df_valid.write.format("delta").mode("append").save(BRONZE_PATH)
 
     if invalid_records:
         df_invalid = spark.createDataFrame(invalid_records)
-        df_invalid = df_invalid \
-            .withColumn("_quarantined_at", current_timestamp())
+        df_invalid = df_invalid.withColumn("_quarantined_at", current_timestamp())
 
-        df_invalid.write.format("delta") \
-            .mode("append") \
-            .save(QUARANTINE_PATH)
+        df_invalid.write.format("delta").mode("append").save(QUARANTINE_PATH)
 
     print(f"Bronze write complete → {BRONZE_PATH}")
+
 
 if __name__ == "__main__":
     ingest_bronze()

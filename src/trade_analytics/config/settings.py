@@ -11,26 +11,26 @@ if SPARK_ENV == SparkEnv.DATABRICKS:
     # QUARANTINE_PATH = abfss(StorageLayer.QUARANTINE, "trade-analytics/bronze/quarantine")
 
     # dbfs location
-    BRONZE_PATH     = "/Volumes/workspace/default/trade-analytics/bronze/raw_trades"
-    SILVER_PATH     = "/Volumes/workspace/default/trade-analytics/silver/trades_enriched"
-    GOLD_PATH       = "/Volumes/workspace/default/trade-analytics/gold"
+    BRONZE_PATH = "/Volumes/workspace/default/trade-analytics/bronze/raw_trades"
+    SILVER_PATH = "/Volumes/workspace/default/trade-analytics/silver/trades_enriched"
+    GOLD_PATH = "/Volumes/workspace/default/trade-analytics/gold"
     QUARANTINE_PATH = "/Volumes/workspace/default/trade-analytics/bronze/quarantine"
 else:
-    _BASE           = "./delta"
-    BRONZE_PATH     = f"{_BASE}/bronze/raw_trades"
-    SILVER_PATH     = f"{_BASE}/silver/trades_enriched"
-    GOLD_PATH       = f"{_BASE}/gold"
+    _BASE = "./delta"
+    BRONZE_PATH = f"{_BASE}/bronze/raw_trades"
+    SILVER_PATH = f"{_BASE}/silver/trades_enriched"
+    GOLD_PATH = f"{_BASE}/gold"
     QUARANTINE_PATH = f"{_BASE}/bronze/quarantine"
 
 
-DATABRICKS_HOST      = os.getenv("DATABRICKS_HOST")
-DATABRICKS_TOKEN     = os.getenv("DATABRICKS_TOKEN")
+DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
 
 
 LARGE_TRADE_THRESHOLD_EUR = 1_000_000
-VELOCITY_WINDOW_MINUTES   = 60
-VELOCITY_MAX_TRADES       = 10
+VELOCITY_WINDOW_MINUTES = 60
+VELOCITY_MAX_TRADES = 10
 
 
 FX_RATES_TO_EUR = {
@@ -39,7 +39,17 @@ FX_RATES_TO_EUR = {
     "USDJPY": 0.0063,
     "USDCHF": 1.08,
 }
-INSTRUMENTS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AAPL", "MSFT",
-               "BRENT", "GOLD", "BMW.DE", "SAP.DE"]
-DESKS       = ["FX", "Equities", "Commodities", "Fixed Income"]
-REGIONS     = ["EMEA", "APAC", "AMER"]
+INSTRUMENTS = [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCHF",
+    "AAPL",
+    "MSFT",
+    "BRENT",
+    "GOLD",
+    "BMW.DE",
+    "SAP.DE",
+]
+DESKS = ["FX", "Equities", "Commodities", "Fixed Income"]
+REGIONS = ["EMEA", "APAC", "AMER"]

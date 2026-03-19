@@ -29,7 +29,7 @@ from prefect import flow, get_run_logger, task
 from prefect.tasks import task_input_hash
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_SRC  = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
+_SRC = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
@@ -51,6 +51,7 @@ def generate_trades(n: int = 50_000, output_path: str = "./data/trades.jsonl") -
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
     from trade_analytics.data_generator.generate_trades import generate_dataset
+
     generate_dataset(n=n, output_path=output_path)
 
     # Verify output
@@ -75,6 +76,7 @@ def ingest_bronze(input_path: str = "./data/trades.jsonl") -> dict:
     logger.info(f"Ingesting Bronze from: {input_path}")
 
     from src.trade_analytics.data_ingestion.ingest_bronze import ingest_bronze as _ingest
+
     result = _ingest(input_path=input_path)
 
     logger.info(
@@ -97,9 +99,11 @@ def transform_silver() -> dict:
     logger.info("Starting Silver transform: Bronze -> Silver Delta")
 
     from trade_analytics.transformations.silver_transform import transform
+
     transform()
 
     from trade_analytics.config.settings import SILVER_PATH
+
     logger.info(f"Silver transform complete -> {SILVER_PATH} ✓")
 
     return {"silver_path": SILVER_PATH}
@@ -180,11 +184,11 @@ def export_gold_csv() -> dict:
     logger.info("Exporting Gold Delta tables -> CSV for Streamlit dashboard")
 
     from src.trade_analytics.data_transformations.export_gold_csv import export
+
     result = export()
 
     logger.info(
-        f"CSV export complete — "
-        f"{len(result['exported_tables'])} tables -> {result['output_dir']} ✓"
+        f"CSV export complete — {len(result['exported_tables'])} tables -> {result['output_dir']} ✓"
     )
     return result
 
@@ -199,8 +203,8 @@ def export_gold_csv() -> dict:
     log_prints=True,
 )
 def trade_pipeline(
-    n_trades:       int = 50_000,
-    trades_path:    str = "./data/trades.jsonl",
+    n_trades: int = 50_000,
+    trades_path: str = "./data/trades.jsonl",
     dbt_project_dir: str = "./dbt_project",
 ) -> None:
     logger = get_run_logger()
@@ -241,10 +245,10 @@ def trade_pipeline(
     )
 
     logger.info(
-    f"Exported {len(export_result['exported_tables'])} tables "
-    f"-> {export_result['output_dir']}: "
-    f"{', '.join(export_result['exported_tables'])}"
-)
+        f"Exported {len(export_result['exported_tables'])} tables "
+        f"-> {export_result['output_dir']}: "
+        f"{', '.join(export_result['exported_tables'])}"
+    )
 
     logger.info("=" * 54)
     logger.info("  Trade Analytics Pipeline — complete")

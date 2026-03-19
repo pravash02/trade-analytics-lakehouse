@@ -24,7 +24,7 @@ from src.trade_analytics.config.spark_session import get_spark
 from src.trade_analytics.config.utils import configure_adls_auth
 
 _FX_MAP: dict[str, float] = FX_RATES_TO_EUR
-_EQUITY_INSTRUMENTS  = {"AAPL", "MSFT", "BMW.DE", "SAP.DE"}
+_EQUITY_INSTRUMENTS = {"AAPL", "MSFT", "BMW.DE", "SAP.DE"}
 _COMMODITY_INSTRUMENTS = {"BRENT", "GOLD"}
 
 
@@ -73,23 +73,20 @@ def _cast_and_clean(df: DataFrame) -> DataFrame:
     df = (
         df
         # ── String normalisation
-        .withColumn("instrument",  F.upper(F.trim(F.col("instrument"))))
-        .withColumn("trader_id",   F.upper(F.trim(F.col("trader_id"))))
-        .withColumn("direction",   F.upper(F.trim(F.col("direction"))))
-        .withColumn("desk",        F.initcap(F.trim(F.col("desk"))))
-        .withColumn("region",      F.upper(F.trim(F.col("region"))))
+        .withColumn("instrument", F.upper(F.trim(F.col("instrument"))))
+        .withColumn("trader_id", F.upper(F.trim(F.col("trader_id"))))
+        .withColumn("direction", F.upper(F.trim(F.col("direction"))))
+        .withColumn("desk", F.initcap(F.trim(F.col("desk"))))
+        .withColumn("region", F.upper(F.trim(F.col("region"))))
         .withColumn("counterparty", F.trim(F.col("counterparty")))
-        .withColumn("status",      F.upper(F.trim(F.col("status"))))
-        .withColumn("notional",    F.col("notional").cast(DecimalType(24, 4)))
-        .withColumn("price",       F.col("price").cast(DecimalType(18, 6)))
-        .withColumn(
-            "trade_timestamp",
-            F.to_timestamp(F.col("trade_timestamp"))
-        )
-        .withColumn("trade_date",  F.col("trade_timestamp").cast(DateType()))
-        .withColumn("trade_hour",  F.hour(F.col("trade_timestamp")).cast(IntegerType()))
+        .withColumn("status", F.upper(F.trim(F.col("status"))))
+        .withColumn("notional", F.col("notional").cast(DecimalType(24, 4)))
+        .withColumn("price", F.col("price").cast(DecimalType(18, 6)))
+        .withColumn("trade_timestamp", F.to_timestamp(F.col("trade_timestamp")))
+        .withColumn("trade_date", F.col("trade_timestamp").cast(DateType()))
+        .withColumn("trade_hour", F.hour(F.col("trade_timestamp")).cast(IntegerType()))
         .withColumn("trade_minute", F.minute(F.col("trade_timestamp")).cast(IntegerType()))
-        .withColumn("is_anomaly",  F.col("is_anomaly").cast(BooleanType()))
+        .withColumn("is_anomaly", F.col("is_anomaly").cast(BooleanType()))
         .dropna(subset=["trade_id", "trader_id", "notional", "trade_timestamp"])
     )
 
@@ -104,7 +101,7 @@ def _apply_business_filters(df: DataFrame) -> DataFrame:
     """
     before = df.count()
     df = df.filter(F.col("status") != "CANCELLED")
-    after  = df.count()
+    after = df.count()
 
     print(f"[Filter] Removed {before - after:,} CANCELLED rows → {after:,} remain")
     return df
@@ -130,71 +127,58 @@ def _engineer_features(df: DataFrame, spark: SparkSession) -> DataFrame:
     to_eur_udf = _build_fx_udf(spark)
 
     df = df.withColumn(
-        "notional_eur",
-        to_eur_udf(F.col("instrument"), F.col("notional").cast("double"))
+        "notional_eur", to_eur_udf(F.col("instrument"), F.col("notional").cast("double"))
     )
 
     df = df.withColumn(
         "signed_notional_eur",
-        F.when(F.col("direction") == "BUY",  F.col("notional_eur"))
-         .when(F.col("direction") == "SELL", -F.col("notional_eur"))
-         .otherwise(F.lit(0.0))
+        F.when(F.col("direction") == "BUY", F.col("notional_eur"))
+        .when(F.col("direction") == "SELL", -F.col("notional_eur"))
+        .otherwise(F.lit(0.0)),
     )
 
     df = df.withColumn(
-        "is_large_trade",
-        (F.col("notional_eur") > LARGE_TRADE_THRESHOLD_EUR).cast(BooleanType())
+        "is_large_trade", (F.col("notional_eur") > LARGE_TRADE_THRESHOLD_EUR).cast(BooleanType())
     )
 
     df = df.withColumn(
         "risk_tier",
         F.when(F.col("notional_eur") > 5_000_000, F.lit("HIGH"))
-         .when(F.col("notional_eur") > LARGE_TRADE_THRESHOLD_EUR, F.lit("MEDIUM"))
-         .otherwise(F.lit("LOW"))
+        .when(F.col("notional_eur") > LARGE_TRADE_THRESHOLD_EUR, F.lit("MEDIUM"))
+        .otherwise(F.lit("LOW")),
     )
 
     df = df.withColumn(
         "time_of_day",
-        F.when(F.col("trade_hour") < 8,  F.lit("PREMARKET"))
-         .when(F.col("trade_hour") < 12, F.lit("MORNING"))
-         .when(F.col("trade_hour") < 16, F.lit("AFTERNOON"))
-         .when(F.col("trade_hour") < 18, F.lit("CLOSE"))
-         .otherwise(F.lit("AFTERHOURS"))
+        F.when(F.col("trade_hour") < 8, F.lit("PREMARKET"))
+        .when(F.col("trade_hour") < 12, F.lit("MORNING"))
+        .when(F.col("trade_hour") < 16, F.lit("AFTERNOON"))
+        .when(F.col("trade_hour") < 18, F.lit("CLOSE"))
+        .otherwise(F.lit("AFTERHOURS")),
     )
 
-    trader_hour_window = (
-        Window
-        .partitionBy("trader_id", "trade_date", "trade_hour")
+    trader_hour_window = Window.partitionBy("trader_id", "trade_date", "trade_hour")
+    df = df.withColumn(
+        "trades_in_hour", F.count("trade_id").over(trader_hour_window).cast(IntegerType())
     )
     df = df.withColumn(
-        "trades_in_hour",
-        F.count("trade_id").over(trader_hour_window).cast(IntegerType())
-    )
-    df = df.withColumn(
-        "velocity_flag",
-        (F.col("trades_in_hour") > VELOCITY_MAX_TRADES).cast(BooleanType())
+        "velocity_flag", (F.col("trades_in_hour") > VELOCITY_MAX_TRADES).cast(BooleanType())
     )
 
     trader_day_running_window = (
-        Window
-        .partitionBy("trader_id", "trade_date")
+        Window.partitionBy("trader_id", "trade_date")
         .orderBy(F.col("trade_timestamp").asc())
         .rowsBetween(Window.unboundedPreceding, Window.currentRow)
     )
     df = df.withColumn(
-        "trader_daily_notional_run",
-        F.sum(F.col("notional_eur")).over(trader_day_running_window)
+        "trader_daily_notional_run", F.sum(F.col("notional_eur")).over(trader_day_running_window)
     )
 
     df = df.withColumn(
         "alert_level",
-        F.when(
-            F.col("is_anomaly") & F.col("velocity_flag"),
-            F.lit("CRITICAL")
-        ).when(
-            F.col("is_anomaly") | F.col("velocity_flag"),
-            F.lit("WARNING")
-        ).otherwise(F.lit("NORMAL"))
+        F.when(F.col("is_anomaly") & F.col("velocity_flag"), F.lit("CRITICAL"))
+        .when(F.col("is_anomaly") | F.col("velocity_flag"), F.lit("WARNING"))
+        .otherwise(F.lit("NORMAL")),
     )
 
     return df
@@ -215,27 +199,22 @@ def _select_silver_schema(df: DataFrame) -> DataFrame:
         F.col("region"),
         F.col("counterparty"),
         F.col("status"),
-
         F.col("notional").cast(DecimalType(24, 4)),
         F.col("notional_eur").cast(DecimalType(24, 4)),
         F.col("signed_notional_eur").cast(DecimalType(24, 4)),
         F.col("price").cast(DecimalType(18, 6)),
-
         F.col("trade_timestamp"),
         F.col("trade_date"),
         F.col("trade_hour"),
         F.col("trade_minute"),
         F.col("time_of_day"),
-
         F.col("is_large_trade"),
         F.col("risk_tier"),
         F.col("velocity_flag"),
         F.col("trades_in_hour"),
         F.col("trader_daily_notional_run").cast(DecimalType(28, 4)),
         F.col("alert_level"),
-
         F.col("is_anomaly"),
-
         F.col("_ingested_at"),
         F.col("_source"),
     )
@@ -256,8 +235,7 @@ def _write_silver(df: DataFrame, spark: SparkSession) -> None:
     print(f"[Silver] Writing to {SILVER_PATH} ...")
 
     (
-        df.write
-        .format("delta")
+        df.write.format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
         .partitionBy("trade_date")
@@ -286,35 +264,27 @@ def _print_summary(spark: SparkSession) -> None:
 
     print("\n── Silver Summary ────────────────────────────────────")
     print(f"  Total rows          : {df.count():,}")
-    print(f"  Date range          : {df.selectExpr('min(trade_date)').collect()[0][0]}"
-          f"  →  {df.selectExpr('max(trade_date)').collect()[0][0]}")
+    print(
+        f"  Date range          : {df.selectExpr('min(trade_date)').collect()[0][0]}"
+        f"  →  {df.selectExpr('max(trade_date)').collect()[0][0]}"
+    )
     print(f"  Distinct traders    : {df.select('trader_id').distinct().count():,}")
     print(f"  Distinct instruments: {df.select('instrument').distinct().count():,}")
 
     print("\n  Alert level breakdown:")
-    (
-        df.groupBy("alert_level")
-          .count()
-          .orderBy("alert_level")
-          .show(truncate=False)
-    )
+    (df.groupBy("alert_level").count().orderBy("alert_level").show(truncate=False))
 
     print("  Risk tier breakdown:")
-    (
-        df.groupBy("risk_tier")
-          .count()
-          .orderBy("risk_tier")
-          .show(truncate=False)
-    )
+    (df.groupBy("risk_tier").count().orderBy("risk_tier").show(truncate=False))
 
     print("  Velocity-flagged trades:")
     (
         df.filter(F.col("velocity_flag"))
-          .groupBy("trader_id")
-          .agg(F.count("trade_id").alias("flagged_trades"))
-          .orderBy(F.col("flagged_trades").desc())
-          .limit(10)
-          .show(truncate=False)
+        .groupBy("trader_id")
+        .agg(F.count("trade_id").alias("flagged_trades"))
+        .orderBy(F.col("flagged_trades").desc())
+        .limit(10)
+        .show(truncate=False)
     )
 
 
@@ -339,7 +309,7 @@ def transform(bronze_path: str = None, silver_path: str = None) -> None:
     if silver_path:
         SILVER_PATH = silver_path
 
-    configure_adls_auth(spark) 
+    configure_adls_auth(spark)
 
     df = _read_bronze(spark)
     df = _cast_and_clean(df)

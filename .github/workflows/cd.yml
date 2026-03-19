@@ -32,6 +32,15 @@ jobs:
 
       - name: ruff lint
         run: ruff check src/ tests/
+      
+      - name: ruff format (auto-fix)
+        run: ruff format src/ tests/
+
+      - name: Commit formatted files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (git add src/ tests/ && git commit -m "style: auto-format via ruff [skip ci]" && git push)
 
       - name: ruff format check
         run: ruff format --check src/ tests/
