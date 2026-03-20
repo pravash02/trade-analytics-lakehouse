@@ -193,195 +193,34 @@ upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
 #         deploy_via_jobs_api
 #     fi
 # }
-# deploy_bundle() {
-#     echo "[INFO] Skipping bundle deploy (CE SCIM restriction)"
-#     echo "[INFO] Deploying directly via Jobs REST API..."
-#     deploy_via_jobs_api
-# }
 deploy_bundle() {
-    echo "[INFO] Job deployment skipped in CI (CE PAT scope restriction)"
-    echo "[INFO] Wheel uploaded and notebooks synced successfully"
-    echo "[INFO] To deploy the job, run deploy_job.ipynb in your Databricks workspace"
-    echo ""
-    echo "  Wheel path : ${WHEEL_VOLUME_PATH}"
-    echo "  Notebooks  : /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/"
-    echo ""
-    echo "  CI artifacts delivered"
-    echo "  Job deploy : manual (run deploy_job.ipynb once)"
+    echo "[INFO] Deploying Databricks Job..."
+    deploy_via_jobs_api
 }
+# deploy_bundle() {
+#     echo "[INFO] Job deployment skipped in CI (CE PAT scope restriction)"
+#     echo "[INFO] Wheel uploaded and notebooks synced successfully"
+#     echo "[INFO] To deploy the job, run deploy_job.ipynb in your Databricks workspace"
+#     echo ""
+#     echo "  Wheel path : ${WHEEL_VOLUME_PATH}"
+#     echo "  Notebooks  : /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/"
+#     echo ""
+#     echo "  CI artifacts delivered"
+#     echo "  Job deploy : manual (run deploy_job.ipynb once)"
+# }
 
 
 deploy_via_jobs_api() {
-    echo "[INFO] Deploying job via REST API (Serverless)..."
-    python3 -c "
-import sys, requests, json, os
-sys.path.insert(0, '${SCRIPT_DIR}')
+    echo "[INFO] Deploying job via REST API..."
+    cd "${PROJECT_ROOT}"
 
-host  = os.environ['DATABRICKS_HOST'].rstrip('/')
-token = os.environ['DATABRICKS_TOKEN']
-headers = {
-    'Authorization': f'Bearer {token}',
-    'Content-Type':  'application/json',
+    export WHEEL_VOLUME_PATH
+    export ENV
+
+    python3 "${SCRIPT_DIR}/deploy_job.py"
 }
 
-wheel_path = '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'
-nb_base    = '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks'
 
-job_payload = {
-    'name': 'trade-analytics-pipeline-DEV',
-
-    'environments': [
-        {
-            'environment_key': 'trade_analytics_env',
-            'spec': {
-                'client': '1',
-                'dependencies': [
-                    wheel_path,
-                    'dbt-databricks',
-                    'pydantic>=2.0.0',
-                    'loguru>=0.7.0',
-                ],
-            },
-        }
-    ],
-
-    'tasks': [
-        {
-            'task_key': 'bronze_ingest',
-            'description': 'Ingest trades.jsonl → Bronze Delta',
-            'environment_key': 'trade_analytics_env',
-            'notebook_task': {
-                'notebook_path': f'{nb_base}/01_bronze_ingest',
-                'source': 'WORKSPACE',
-            },
-            'timeout_seconds': 1800,
-            'max_retries': 1,
-        },
-        {
-            'task_key': 'silver_transform',
-            'description': 'PySpark Bronze → Silver Delta',
-            'depends_on': [{'task_key': 'bronze_ingest'}],
-            'environment_key': 'trade_analytics_env',
-            'notebook_task': {
-                'notebook_path': f'{nb_base}/02_silver_transform',
-                'source': 'WORKSPACE',
-            },
-            'timeout_seconds': 3600,
-            'max_retries': 1,
-        },
-        {
-            'task_key': 'dbt_gold',
-            'description': 'dbt run + test → Gold Delta marts',
-            'depends_on': [{'task_key': 'silver_transform'}],
-            'environment_key': 'trade_analytics_env',
-            'notebook_task': {
-                'notebook_path': f'{nb_base}/03_run_dbt',
-                'source': 'WORKSPACE',
-            },
-            'timeout_seconds': 3600,
-            'max_retries': 0,
-        },
-    ],
-}
-
-# Upsert — update if exists, create if not
-resp  = requests.get(f'{host}/api/2.1/jobs/list', headers=headers)
-jobs  = resp.json().get('jobs', [])
-match = [j for j in jobs if j['settings']['name'] == job_payload['name']]
-
-if match:
-    job_id = match[0]['job_id']
-    resp   = requests.post(
-        f'{host}/api/2.1/jobs/reset',
-        headers=headers,
-        json={'job_id': job_id, 'new_settings': job_payload},
-    )
-    print(f'[INFO] Job updated  (id={job_id}) → {resp.status_code}')
-else:
-    resp = requests.post(
-        f'{host}/api/2.1/jobs/create',
-        headers=headers,
-        json=job_payload,
-    )
-    data = resp.json()
-    print(f'[INFO] Job created  (id={data.get(\"job_id\")}) → {resp.status_code}')
-
-if resp.status_code not in (200, 204):
-    raise RuntimeError(f'Job deploy failed: {resp.status_code} {resp.text}')
-
-print('[INFO] Job deploy complete ✓')
-"
-}
-
-# deploy_via_jobs_api() {
-#     echo "[INFO] Deploying job via REST API..."
-#     python3 -c "
-# import sys, requests, json, os, yaml
-# sys.path.insert(0, '${SCRIPT_DIR}')
-
-# host  = os.environ['DATABRICKS_HOST'].rstrip('/')
-# token = os.environ['DATABRICKS_TOKEN']
-# headers = {
-#     'Authorization': f'Bearer {token}',
-#     'Content-Type':  'application/json',
-# }
-
-# # Load job definition from pipeline.yml
-# # For CE, create a minimal job directly via API
-# job_payload = {
-#     'name': 'trade-analytics-pipeline-TARGET',
-#     'tasks': [
-#         {
-#             'task_key': 'bronze_ingest',
-#             'notebook_task': {
-#                 'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/01_bronze_ingest',
-#             },
-#             'existing_cluster_id': '${CLUSTER_ID}',
-#             'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
-#         },
-#         {
-#             'task_key': 'silver_transform',
-#             'depends_on': [{'task_key': 'bronze_ingest'}],
-#             'notebook_task': {
-#                 'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/02_silver_transform',
-#             },
-#             'existing_cluster_id': '${CLUSTER_ID}',
-#             'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
-#         },
-#         {
-#             'task_key': 'dbt_gold',
-#             'depends_on': [{'task_key': 'silver_transform'}],
-#             'notebook_task': {
-#                 'notebook_path': '/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/03_run_dbt',
-#             },
-#             'existing_cluster_id': '${CLUSTER_ID}',
-#             'libraries': [{'whl': '/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl'}],
-#         },
-#     ],
-# }
-
-# # Check if job already exists
-# resp = requests.get(f'{host}/api/2.1/jobs/list', headers=headers)
-# jobs = resp.json().get('jobs', [])
-# existing = [j for j in jobs if j['settings']['name'] == job_payload['name']]
-
-# if existing:
-#     job_id = existing[0]['job_id']
-#     resp = requests.post(
-#         f'{host}/api/2.1/jobs/reset',
-#         headers=headers,
-#         json={'job_id': job_id, 'new_settings': job_payload},
-#     )
-#     print(f'Job updated (id={job_id}): {resp.status_code}')
-# else:
-#     resp = requests.post(
-#         f'{host}/api/2.1/jobs/create',
-#         headers=headers,
-#         json=job_payload,
-#     )
-#     print(f'Job created: {resp.status_code} {resp.json()}')
-# "
-# }
 sync_notebooks() {
     echo "[INFO] Syncing notebooks to Databricks workspace..."
     cd "${PROJECT_ROOT}"
