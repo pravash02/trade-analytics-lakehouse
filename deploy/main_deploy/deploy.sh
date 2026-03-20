@@ -193,10 +193,21 @@ upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
 #         deploy_via_jobs_api
 #     fi
 # }
+# deploy_bundle() {
+#     echo "[INFO] Skipping bundle deploy (CE SCIM restriction)"
+#     echo "[INFO] Deploying directly via Jobs REST API..."
+#     deploy_via_jobs_api
+# }
 deploy_bundle() {
-    echo "[INFO] Skipping bundle deploy (CE SCIM restriction)"
-    echo "[INFO] Deploying directly via Jobs REST API..."
-    deploy_via_jobs_api
+    echo "[INFO] Job deployment skipped in CI (CE PAT scope restriction)"
+    echo "[INFO] Wheel uploaded and notebooks synced successfully"
+    echo "[INFO] To deploy the job, run deploy_job.ipynb in your Databricks workspace"
+    echo ""
+    echo "  Wheel path : ${WHEEL_VOLUME_PATH}"
+    echo "  Notebooks  : /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/"
+    echo ""
+    echo "  CI artifacts delivered"
+    echo "  Job deploy : manual (run deploy_job.ipynb once)"
 }
 
 
