@@ -29,7 +29,6 @@ headers = {
     "Content-Type":  "application/json",
 }
 
-# ── Job definition ────────────────────────────────────────────────────────────
 wheel_path = os.environ.get(
     "WHEEL_VOLUME_PATH",
     "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl"
@@ -92,7 +91,6 @@ job_payload = {
     ],
 }
 
-# ── List existing jobs ────────────────────────────────────────────────────────
 print(f"[INFO] Connecting to: {host}")
 resp = requests.get(f"{host}/api/2.1/jobs/list", headers=headers)
 
@@ -103,7 +101,6 @@ if resp.status_code != 200:
 jobs  = resp.json().get("jobs", [])
 match = [j for j in jobs if j["settings"]["name"] == job_payload["name"]]
 
-# ── Upsert ────────────────────────────────────────────────────────────────────
 if match:
     job_id = match[0]["job_id"]
     print(f"[INFO] Job exists (id={job_id}) — updating...")
@@ -131,7 +128,6 @@ else:
     job_id = resp.json().get("job_id")
     print(f"[INFO] Job created (id={job_id}) ✓")
 
-# ── Verify ────────────────────────────────────────────────────────────────────
 resp = requests.get(
     f"{host}/api/2.1/jobs/get?job_id={job_id}",
     headers=headers,
