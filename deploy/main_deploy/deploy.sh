@@ -380,14 +380,17 @@ sync_notebooks() {
         /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks \
         2>/dev/null || true
 
-    # Upload each notebook
     for nb in databricks_notebooks/*.ipynb; do
         nb_name=$(basename "${nb}" .ipynb)
-        echo "[INFO] Uploading ${nb} → /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/${nb_name}"
-        databricks workspace import "${nb}" \
-            /Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/${nb_name} \
+        target_path="/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks/${nb_name}"
+        echo "[INFO] Uploading ${nb} → ${target_path}"
+
+        databricks workspace import \
+            --file "${nb}" \
             --format JUPYTER \
-            --overwrite
+            --language PYTHON \
+            --overwrite \
+            "${target_path}"
     done
 
     echo "[INFO] Notebooks synced ✓"
