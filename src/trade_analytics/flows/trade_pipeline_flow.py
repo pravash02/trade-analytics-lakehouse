@@ -50,7 +50,7 @@ def generate_trades(n: int = 50_000, output_path: str = "./data/trades.jsonl") -
     # Ensure output directory exists
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
-    from trade_analytics.data_generator.generate_trades import generate_dataset
+    from src.trade_analytics.data_generator.generate_trades import generate_dataset
 
     generate_dataset(n=n, output_path=output_path)
 
@@ -98,11 +98,11 @@ def transform_silver() -> dict:
     logger = get_run_logger()
     logger.info("Starting Silver transform: Bronze -> Silver Delta")
 
-    from trade_analytics.transformations.silver_transform import transform
+    from src.trade_analytics.data_transformations.silver_transform import transform
 
     transform()
 
-    from trade_analytics.config.settings import SILVER_PATH
+    from src.trade_analytics.config.settings import SILVER_PATH
 
     logger.info(f"Silver transform complete -> {SILVER_PATH} ✓")
 
