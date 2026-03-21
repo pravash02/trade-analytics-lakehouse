@@ -115,15 +115,16 @@ jobs:
         run: pip install dbt-databricks
 
       - name: dbt compile (SQL syntax validation)
-        ## Uses a dummy profile — compile only validates SQL, no DB connection needed
         env:
           DATABRICKS_HOST:      "https://dummy.azuredatabricks.net"
           DATABRICKS_TOKEN:     "dummy_token_for_compile_only"
           DATABRICKS_HTTP_PATH: "/sql/1.0/warehouses/dummy"
+          UC_CATALOG:           "workspace"
+          DBT_SCHEMA:           "trade_analytics_gold"
+          DBT_THREADS:          "4"
         run: |
           cd dbt_project
-          dbt compile --profiles-dir . 2>&1
-        continue-on-error: false
+          dbt compile --profiles-dir .
 
   wheel:
     name: Build wheel

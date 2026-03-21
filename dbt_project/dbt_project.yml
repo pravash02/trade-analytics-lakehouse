@@ -1,0 +1,29 @@
+name: trade_analytics
+version: "1.0.0"
+config-version: 2
+
+profile: trade_analytics
+
+model-paths:      ["models"]
+test-paths:       ["tests"]
+macro-paths:      ["macros"]
+snapshot-paths:   ["snapshots"]
+analysis-paths:   ["analyses"]
+seed-paths:       ["seeds"]
+target-path:      "target"
+clean-targets:    ["target", "dbt_packages"]
+
+models:
+  trade_analytics:
+    staging:
+      +materialized: view
+      +schema: trade_analytics_staging
+
+    intermediate:
+      +materialized: view
+      +schema: trade_analytics_intermediate
+
+    marts:
+      +materialized: table
+      +file_format: delta
+      +schema: trade_analytics_gold

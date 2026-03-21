@@ -11,3 +11,4 @@
 /tests/__pycache__
 *.pyc
 /spark-warehouse
+.ruff_cache
