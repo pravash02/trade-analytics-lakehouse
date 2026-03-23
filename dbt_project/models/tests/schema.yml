@@ -1,0 +1,216 @@
+version: 2
+
+# =============================================================================
+# dbt_project/tests/schema.yml
+#
+# Data quality tests for all layers.
+# Run with: dbt test --profiles-dir .
+#
+# Test types:
+#   unique          — no duplicate values
+#   not_null        — no null values
+#   accepted_values — only listed values allowed
+# =============================================================================
+
+models:
+  - name: stg_trades
+    description: "Cleaned and filtered Silver trades — source for all Gold models"
+    columns:
+
+      - name: trade_id
+        description: "Unique trade identifier (UUID)"
+        tests:
+          - unique
+          - not_null
+
+      - name: trader_id
+        description: "Trader identifier — TDR_XXX format"
+        tests:
+          - not_null
+
+      - name: direction
+        description: "Trade direction"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['BUY', 'SELL']
+
+      - name: status
+        description: "Trade status — CANCELLED excluded at this layer"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EXECUTED', 'PENDING']
+
+      - name: notional_eur
+        description: "Notional value in EUR"
+        tests:
+          - not_null
+
+      - name: risk_tier
+        description: "Risk classification based on notional_eur"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['HIGH', 'MEDIUM', 'LOW']
+
+      - name: alert_level
+        description: "Composite anomaly alert level"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CRITICAL', 'WARNING', 'NORMAL']
+
+      - name: desk
+        description: "Trading desk"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Fx', 'Equities', 'Commodities', 'Fixed Income']
+
+      - name: time_of_day
+        description: "Time bucket based on trade hour"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['PREMARKET', 'MORNING', 'AFTERNOON', 'CLOSE', 'AFTERHOURS']
+
+      - name: trade_date
+        tests:
+          - not_null
+
+      - name: trade_timestamp
+        tests:
+          - not_null
+
+  - name: int_trade_enriched
+    description: "Enriched trades with derived columns for mart aggregations"
+    columns:
+
+      - name: trade_id
+        tests:
+          - unique
+          - not_null
+
+      - name: direction_multiplier
+        description: "+1 for BUY, -1 for SELL"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, -1]
+
+      - name: day_of_week
+        description: "1=Sunday through 7=Saturday"
+        tests:
+          - not_null
+
+      - name: exposure_tier
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['HIGH', 'MEDIUM', 'LOW']
+
+      - name: is_market_hours
+        tests:
+          - not_null
+
+      - name: is_weekend
+        tests:
+          - not_null
+
+  - name: mart_daily_volume
+    description: "Daily trade volume aggregated by date, desk, and instrument"
+    columns:
+
+      - name: trade_date
+        tests:
+          - not_null
+
+      - name: desk
+        tests:
+          - not_null
+
+      - name: instrument
+        tests:
+          - not_null
+
+      - name: trade_count
+        tests:
+          - not_null
+
+      - name: total_notional_eur
+        tests:
+          - not_null
+
+      - name: anomaly_rate_pct
+        tests:
+          - not_null
+
+      - name: buy_pct
+        tests:
+          - not_null
+
+      - name: sell_pct
+        tests:
+          - not_null
+
+  - name: mart_risk_exposure
+    description: "Net risk exposure aggregated per trader"
+    columns:
+
+      - name: trader_id
+        tests:
+          - unique
+          - not_null
+
+      - name: net_exposure_eur
+        tests:
+          - not_null
+
+      - name: exposure_risk_tier
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['HIGH', 'MEDIUM', 'LOW']
+
+      - name: worst_alert_level
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CRITICAL', 'WARNING', 'NORMAL']
+
+      - name: position_direction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['LONG', 'SHORT', 'FLAT']
+
+      - name: anomaly_rate_pct
+        tests:
+          - not_null
+
+  - name: mart_top_instruments
+    description: "Volume and anomaly stats ranked by instrument"
+    columns:
+
+      - name: instrument
+        tests:
+          - unique
+          - not_null
+
+      - name: total_volume_eur
+        tests:
+          - not_null
+
+      - name: volume_rank
+        tests:
+          - unique
+          - not_null
+
+      - name: anomaly_rate_pct
+        tests:
+          - not_null
+
+      - name: volume_share_pct
+        tests:
+          - not_null
