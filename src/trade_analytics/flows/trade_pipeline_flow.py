@@ -23,8 +23,10 @@ Called by:
 import os
 import subprocess
 import sys
+import time
 from datetime import timedelta
 
+import requests
 from prefect import flow, get_run_logger, task
 from prefect.tasks import task_input_hash
 
@@ -112,7 +114,6 @@ def transform_silver() -> dict:
 @task(name="wake-warehouse", description="Ensure SQL Warehouse is running before dbt")
 def wake_warehouse() -> None:
     logger = get_run_logger()
-    import requests, time, os
 
     host          = os.environ["DATABRICKS_HOST"].rstrip("/")
     token         = os.environ["DATABRICKS_TOKEN"]
