@@ -25,6 +25,7 @@ import subprocess
 import sys
 import time
 from datetime import timedelta
+
 import requests
 from prefect import flow, get_run_logger, task
 from prefect.tasks import task_input_hash
@@ -114,10 +115,10 @@ def transform_silver() -> dict:
 def wake_warehouse() -> None:
     logger = get_run_logger()
 
-    host          = os.environ["DATABRICKS_HOST"].rstrip("/")
-    token         = os.environ["DATABRICKS_TOKEN"]
-    http_path     = os.environ.get("DATABRICKS_HTTP_PATH", "")
-    warehouse_id  = http_path.split("/")[-1]
+    host = os.environ["DATABRICKS_HOST"].rstrip("/")
+    token = os.environ["DATABRICKS_TOKEN"]
+    http_path = os.environ.get("DATABRICKS_HTTP_PATH", "")
+    warehouse_id = http_path.split("/")[-1]
 
     if not warehouse_id:
         logger.warning("DATABRICKS_HTTP_PATH not set — skipping warehouse wake")
@@ -132,7 +133,7 @@ def wake_warehouse() -> None:
     )
 
     for attempt in range(30):
-        resp  = requests.get(
+        resp = requests.get(
             f"{host}/api/2.0/sql/warehouses/{warehouse_id}",
             headers=headers,
         )
@@ -266,10 +267,8 @@ def trade_pipeline(
     silver_result = transform_silver(
         wait_for=[bronze_result],
     )
-    
-    warehouse_result = wake_warehouse(
-        wait_for=[silver_result]
-    )
+
+    warehouse_result = wake_warehouse(wait_for=[silver_result])
 
     dbt_run_result = run_dbt(
         dbt_project_dir=dbt_project_dir,
