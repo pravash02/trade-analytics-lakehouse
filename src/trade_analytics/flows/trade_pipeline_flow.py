@@ -25,7 +25,6 @@ import subprocess
 import sys
 import time
 from datetime import timedelta
-
 import requests
 from prefect import flow, get_run_logger, task
 from prefect.tasks import task_input_hash
