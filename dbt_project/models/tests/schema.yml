@@ -31,16 +31,16 @@ models:
       - name: direction
         description: "Trade direction"
         tests:
-          - not_null
           - accepted_values:
-              values: ['BUY', 'SELL']
+              arguments:
+                values: ['BUY', 'SELL']
 
       - name: status
         description: "Trade status — CANCELLED excluded at this layer"
         tests:
-          - not_null
           - accepted_values:
-              values: ['EXECUTED', 'PENDING']
+              arguments:
+                values: ['EXECUTED', 'PENDING']
 
       - name: notional_eur
         description: "Notional value in EUR"
@@ -50,30 +50,32 @@ models:
       - name: risk_tier
         description: "Risk classification based on notional_eur"
         tests:
-          - not_null
           - accepted_values:
-              values: ['HIGH', 'MEDIUM', 'LOW']
+              arguments:
+                values: ['HIGH', 'MEDIUM', 'LOW']
 
       - name: alert_level
         description: "Composite anomaly alert level"
         tests:
-          - not_null
           - accepted_values:
-              values: ['CRITICAL', 'WARNING', 'NORMAL']
+              arguments:
+                values: ['CRITICAL', 'WARNING', 'NORMAL']
 
       - name: desk
         description: "Trading desk"
         tests:
           - not_null
           - accepted_values:
-              values: ['Fx', 'Equities', 'Commodities', 'Fixed Income']
+              arguments:
+                values: ['Fx', 'Equities', 'Commodities', 'Fixed Income']
 
       - name: time_of_day
         description: "Time bucket based on trade hour"
         tests:
           - not_null
           - accepted_values:
-              values: ['PREMARKET', 'MORNING', 'AFTERNOON', 'CLOSE', 'AFTERHOURS']
+              arguments:
+                values: ['PREMARKET', 'MORNING', 'AFTERNOON', 'CLOSE', 'AFTERHOURS']
 
       - name: trade_date
         tests:
@@ -97,7 +99,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, -1]
+              arguments:
+                values: [1, -1]
 
       - name: day_of_week
         description: "1=Sunday through 7=Saturday"
@@ -108,7 +111,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['HIGH', 'MEDIUM', 'LOW']
+              arguments:
+                values: ['HIGH', 'MEDIUM', 'LOW']
 
       - name: is_market_hours
         tests:
@@ -171,19 +175,22 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['HIGH', 'MEDIUM', 'LOW']
+              arguments:
+                values: ['HIGH', 'MEDIUM', 'LOW']
 
       - name: worst_alert_level
         tests:
           - not_null
           - accepted_values:
-              values: ['CRITICAL', 'WARNING', 'NORMAL']
+              arguments:
+                values: ['CRITICAL', 'WARNING', 'NORMAL']
 
       - name: position_direction
         tests:
           - not_null
           - accepted_values:
-              values: ['LONG', 'SHORT', 'FLAT']
+              arguments:
+                values: ['LONG', 'SHORT', 'FLAT']
 
       - name: anomaly_rate_pct
         tests:

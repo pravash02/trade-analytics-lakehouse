@@ -109,6 +109,43 @@ def transform_silver() -> dict:
     return {"silver_path": SILVER_PATH}
 
 
+@task(name="wake-warehouse", description="Ensure SQL Warehouse is running before dbt")
+def wake_warehouse() -> None:
+    logger = get_run_logger()
+    import requests, time, os
+
+    host          = os.environ["DATABRICKS_HOST"].rstrip("/")
+    token         = os.environ["DATABRICKS_TOKEN"]
+    http_path     = os.environ.get("DATABRICKS_HTTP_PATH", "")
+    warehouse_id  = http_path.split("/")[-1]
+
+    if not warehouse_id:
+        logger.warning("DATABRICKS_HTTP_PATH not set — skipping warehouse wake")
+        return
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    logger.info(f"Starting SQL Warehouse: {warehouse_id}")
+    requests.post(
+        f"{host}/api/2.0/sql/warehouses/{warehouse_id}/start",
+        headers=headers,
+    )
+
+    for attempt in range(30):
+        resp  = requests.get(
+            f"{host}/api/2.0/sql/warehouses/{warehouse_id}",
+            headers=headers,
+        )
+        state = resp.json().get("state", "UNKNOWN")
+        logger.info(f"Warehouse state: {state} (attempt {attempt + 1}/30)")
+        if state == "RUNNING":
+            logger.info("Warehouse is RUNNING ✓")
+            return
+        time.sleep(10)
+
+    raise Exception("SQL Warehouse did not start within 5 minutes")
+
+
 @task(
     name="run-dbt",
     description="dbt run: materialise staging -> intermediate -> Gold mart tables",
@@ -229,10 +266,14 @@ def trade_pipeline(
     silver_result = transform_silver(
         wait_for=[bronze_result],
     )
+    
+    warehouse_result = wake_warehouse(
+        wait_for=[silver_result]
+    )
 
     dbt_run_result = run_dbt(
         dbt_project_dir=dbt_project_dir,
-        wait_for=[silver_result],
+        wait_for=[warehouse_result],
     )
 
     dbt_test_result = test_dbt(

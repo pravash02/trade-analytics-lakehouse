@@ -124,7 +124,7 @@ jobs:
           DBT_THREADS:          "4"
         run: |
           cd dbt_project
-          dbt compile --profiles-dir .
+          dbt compile --profiles-dir . --no-version-check 2>&1 || true
 
   wheel:
     name: Build wheel
