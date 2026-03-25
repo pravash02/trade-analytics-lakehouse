@@ -3,9 +3,9 @@ import json
 from pydantic import ValidationError
 from pyspark.sql.functions import current_timestamp, lit
 
-from src.trade_analytics.config.settings import BRONZE_PATH, QUARANTINE_PATH
-from src.trade_analytics.config.spark_session import get_spark
-from src.trade_analytics.data_ingestion.schema import TradeEvent
+from trade_analytics.config.settings import BRONZE_PATH, QUARANTINE_PATH
+from trade_analytics.config.spark_session import get_spark
+from trade_analytics.data_ingestion.schema import TradeEvent
 
 spark = get_spark("TradeAnalyticsLakehouse")
 

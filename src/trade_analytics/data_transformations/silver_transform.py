@@ -13,15 +13,15 @@ from pyspark.sql.types import (
 )
 from pyspark.sql.window import Window
 
-from src.trade_analytics.config.settings import (
+from trade_analytics.config.settings import (
     BRONZE_PATH,
     FX_RATES_TO_EUR,
     LARGE_TRADE_THRESHOLD_EUR,
     SILVER_PATH,
     VELOCITY_MAX_TRADES,
 )
-from src.trade_analytics.config.spark_session import get_spark
-from src.trade_analytics.config.utils import configure_adls_auth
+from trade_analytics.config.spark_session import get_spark
+from trade_analytics.config.utils import configure_adls_auth
 
 _FX_MAP: dict[str, float] = FX_RATES_TO_EUR
 _EQUITY_INSTRUMENTS = {"AAPL", "MSFT", "BMW.DE", "SAP.DE"}

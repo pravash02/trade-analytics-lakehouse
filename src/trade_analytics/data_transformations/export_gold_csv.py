@@ -4,9 +4,9 @@ from pathlib import Path
 
 from pyspark.sql import DataFrame, SparkSession
 
-from src.trade_analytics.config.enums import SPARK_ENV, SparkEnv
-from src.trade_analytics.config.settings import GOLD_PATH
-from src.trade_analytics.config.spark_session import get_spark
+from trade_analytics.config.enums import SPARK_ENV, SparkEnv
+from trade_analytics.config.settings import GOLD_PATH
+from trade_analytics.config.spark_session import get_spark
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SRC = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
