@@ -31,7 +31,7 @@ headers = {
 
 wheel_path = os.environ.get(
     "WHEEL_VOLUME_PATH",
-    "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl"
+    "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-0.1.0-py3-none-any.whl"
 )
 nb_base = "/Workspace/Shared/trade-analytics-lakehouse/databricks_notebooks"
 env     = os.environ.get("ENV", "DEV")
@@ -45,9 +45,6 @@ job_payload = {
                 "client": "1",
                 "dependencies": [
                     wheel_path,
-                    "dbt-databricks",
-                    "pydantic>=2.0.0",
-                    "loguru>=0.7.0",
                 ],
             },
         }

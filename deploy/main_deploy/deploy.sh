@@ -158,7 +158,7 @@ def upload(local_path, volume_path):
     print(f'[INFO] Uploaded → {volume_path} ✓')
 
 # Upload as latest
-upload('${WHEEL_FILE}', '${WHEEL_VOLUME_PATH}')
+# upload('${WHEEL_FILE}', '${WHEEL_VOLUME_PATH}')
 
 # Upload as versioned
 upload('${WHEEL_FILE}', '${WHEEL_VERSIONED_PATH}')
@@ -233,6 +233,15 @@ sync_notebooks() {
     echo "[INFO] Notebooks synced ✓"
 }
 
+sync_src() {
+    echo "[INFO] Syncing src/ to Databricks Volume..."
+    cd "${PROJECT_ROOT}"
+
+    VOLUME_SRC_PATH="/Volumes/workspace/default/trade-analytics/src" \
+    SRC_DIR="${PROJECT_ROOT}/src" \
+        python3 "${SCRIPT_DIR}/sync_src.py"
+}
+
 
 main() {
     echo ""
@@ -250,6 +259,7 @@ main() {
     resolve_auth
     build_wheel
     upload_wheel
+    sync_src
     sync_notebooks
     deploy_bundle
 }

@@ -16,7 +16,7 @@ targets:
       uc_schema:  "default"
       uc_volume:  "trade-analytics"
 
-      wheel_path: "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-latest.whl"
+      wheel_path: "/Volumes/workspace/default/trade-analytics/wheels/trade_analytics-0.1.0-py3-none-any.whl"
 
       dbt_schema:  "trade_analytics_dev"
       dbt_threads: "4"
