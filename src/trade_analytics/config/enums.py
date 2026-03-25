@@ -11,13 +11,16 @@ class SparkEnv(StrEnum, Enum):
 # Auto-detect Databricks environment
 def _detect_spark_env() -> SparkEnv:
     """Detect if running in Databricks by checking for Databricks-specific environment variables."""
-    if any([
-        os.getenv("DATABRICKS_RUNTIME_VERSION"),
-        os.getenv("DB_HOME"),
-        os.getenv("DATABRICKS_HOST")
-    ]):
+    if any(
+        [
+            os.getenv("DATABRICKS_RUNTIME_VERSION"),
+            os.getenv("DB_HOME"),
+            os.getenv("DATABRICKS_HOST"),
+        ]
+    ):
         return SparkEnv.DATABRICKS
     return SparkEnv.LOCAL
+
 
 SPARK_ENV = _detect_spark_env()
 
