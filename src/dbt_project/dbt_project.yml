@@ -26,4 +26,4 @@ models:
     marts:
       +materialized: table
       +file_format: delta
-      +schema: trade_analytics_gold
+      +schema: gold
