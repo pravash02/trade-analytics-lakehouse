@@ -17,13 +17,13 @@ models:
   trade_analytics:
     staging:
       +materialized: view
-      +schema: trade_analytics_staging
+      +schema: staging
 
     intermediate:
       +materialized: view
-      +schema: trade_analytics_intermediate
+      +schema: intermediate
 
     marts:
       +materialized: table
       +file_format: delta
-      +schema: trade_analytics_gold
+      # No +schema - use target schema directly (trade_analytics_gold from profiles.yml)

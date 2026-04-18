@@ -54,6 +54,7 @@ def upload_file(local_path: Path, volume_path: str) -> None:
         )
 
 
+# Becasue of this its not uploading the dbt_project folder to the volume
 py_files = list(src_dir.rglob("*.py"))
 
 if not py_files:
