@@ -3,7 +3,7 @@ trade_analytics:
   outputs:
     dev:
       type:      databricks
-      catalog:   "{{ env_var('UC_CATALOG', 'workspace/trade_analytics') }}"
+      catalog:   "{{ env_var('UC_CATALOG', 'workspace/trade-analytics') }}"
       schema:    "{{ env_var('DBT_SCHEMA', 'trade_analytics_gold') }}"
       host:      "{{ env_var('DATABRICKS_HOST') }}"
       http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
