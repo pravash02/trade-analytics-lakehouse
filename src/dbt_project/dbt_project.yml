@@ -26,4 +26,4 @@ models:
     marts:
       +materialized: table
       +file_format: delta
-      # No +schema - use target schema directly (trade_analytics_gold from profiles.yml)
+      +schema: trade_analytics_gold
