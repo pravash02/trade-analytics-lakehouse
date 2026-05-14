@@ -19,7 +19,9 @@ Java version - 17
 3. Check if Java setup is correct: 
     - export JAVA_HOME=\$(/usr/libexec/java_home)
     - echo $JAVA_HOME
-4. Check all java verions installed: /usr/libexec/java_home -V
+    - echo 'export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"' >> /Users/<USER_NAME>/.zshrc
+4. Reload: source ~/.zshrc
+5. Check all java verions installed: /usr/libexec/java_home -V
 
 
 ## Spark
